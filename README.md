@@ -1,6 +1,10 @@
 # Sentinel ECU
 
+[**Open the live simulator**](https://sentinel-ecu.pages.dev/) · [Validation checks](https://github.com/sairaghu401-cloud/sentinel-ecu/actions)
+
 A complete local software laboratory for the Sentinel ECU capstone: a two-segment CAN security gateway, an independent learned anomaly detector, a separate safety task, controlled attacks, and a live evidence dashboard. No hardware or online service is required.
+
+The hosted browser edition works without installing anything or keeping a server running. Each tab has an independent simulation. Imported traces stay on your device; export your results before reloading or closing. Cloudflare automatically deploys changes pushed to `main`.
 
 ## Start
 

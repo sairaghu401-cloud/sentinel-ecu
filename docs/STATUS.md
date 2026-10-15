@@ -4,6 +4,7 @@ The software simulation, local server, dashboard, trace replay and validation wo
 
 ## Verification completed
 
+- Public deployment verified on October 15, 2026 at `https://sentinel-ecu.pages.dev/`: browser worker startup, step/run/pause, maximum battery flood, 12/12 live validation cases, CSV trace import, CSV and JSON downloads, reset, and no observed browser errors. HTTPS assets and content security policy verified. GitHub CI passes on Windows/Linux with Node 22/24.
 - The visual redesign applies locally vendored Tabler components and Amber Minimal tokens, Barlow typography, an original selectable vehicle schematic, and motion tied to run/pause/connectivity. Sources and interaction semantics are in `DESIGN.md`.
 - Vehicle signal selection and normal/reduced-motion behavior pass browser checks. Additional 320, 768 and 1024px checks cover all four views. The analyst switch now preserves its requested position while awaiting the server response.
 

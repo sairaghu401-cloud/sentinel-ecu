@@ -1,5 +1,7 @@
 # Publishing Sentinel ECU
 
+Production site: **https://sentinel-ecu.pages.dev/**. Source: **https://github.com/sairaghu401-cloud/sentinel-ecu**. Cloudflare Pages is connected to the repository's `main` branch; pushes trigger builds and deployments.
+
 The public browser edition runs the same simulation, trace parser, and acceptance suite as the local Node edition. Cloudflare Pages serves only application assets. Every browser tab owns an independent Web Worker session. A second worker runs validation without freezing the workbench.
 
 No CAN traces, simulated session data, or credentials are sent to a simulation server. Imported files are processed in the browser. Reloading or closing a tab discards that session; use CSV/report export first. Background browser throttling may slow simulated time relative to wall time. Simulated CAN timing remains deterministic. This is a software laboratory, not a hardware or safety-certified system.
