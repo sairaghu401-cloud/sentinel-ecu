@@ -1,0 +1,36 @@
+{
+  "recorded": "2026-10-14",
+  "sources": "docs/DESIGN.md",
+  "assets": [
+    {
+      "file": "web/vendor/amber-minimal.json",
+      "bytes": 6119,
+      "sha256": "b2b3381480a1ffb021d814a41cc8bc76bb9a4de4d8915663309a09221f93d39a"
+    },
+    {
+      "file": "web/vendor/barlow-condensed-semibold.ttf",
+      "bytes": 86636,
+      "sha256": "0d85af813fc3ed87db0c6265515689b2eef5cbaf7aab17922528dfc95a2cd73f"
+    },
+    {
+      "file": "web/vendor/barlow-regular.ttf",
+      "bytes": 82624,
+      "sha256": "a35caa4687f434d66453c1fe423d7074cfa9fd7ab80c19b0780f3862887d2fc9"
+    },
+    {
+      "file": "web/vendor/barlow-semibold.ttf",
+      "bytes": 85876,
+      "sha256": "c15439e7a03af5714282ec1780ff7b0214ec6a7db96300b54928dbcd2569ca0c"
+    },
+    {
+      "file": "web/vendor/tabler.min.css",
+      "bytes": 635394,
+      "sha256": "370a2d4e608ae518351d10528fc7dbe19b354ae5062c51b2a9cb294850d65403"
+    },
+    {
+      "file": "web/vendor/theme.css",
+      "bytes": 2812,
+      "sha256": "73c8a48aeb888888126de8779c88358ddae57c2b269f8aa3a2c06abcedc4e36c"
+    }
+  ]
+}

@@ -1,0 +1,1025 @@
+{
+  "createdAt": "2026-10-15T03:16:27.543Z",
+  "seed": 42,
+  "durationMs": 6000,
+  "datasetKind": "synthetic",
+  "summary": {
+    "passed": 12,
+    "total": 12
+  },
+  "cases": [
+    {
+      "name": "Clean urban traffic",
+      "profile": "urban",
+      "attack": null,
+      "passed": true,
+      "checks": [
+        {
+          "name": "Traffic generated",
+          "passed": true,
+          "detail": "1050 normal frames."
+        },
+        {
+          "name": "No attack contamination",
+          "passed": true,
+          "detail": "0 attack frames."
+        },
+        {
+          "name": "False-positive rate at most 1%",
+          "passed": true,
+          "detail": "0.00%"
+        },
+        {
+          "name": "Normal safety state",
+          "passed": true,
+          "detail": "NORMAL"
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1050 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1050,
+        "forwarded": 1050,
+        "blocked": 0,
+        "dropped": 0,
+        "alerts": 0,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 1.4,
+        "processingP95Us": 3.5,
+        "simulatedLatencyP95Us": 574,
+        "tp": 0,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 0,
+        "precision": null,
+        "recall": null,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 0,
+        "inspectedAttackRecall": null,
+        "firstAttackAtMs": null,
+        "firstDetectionLatencyMs": null,
+        "safetyActivationLatencyMs": null,
+        "retainedFrames": 1050,
+        "completedFrames": 1050,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "OBSERVE",
+        "safetyState": "NORMAL"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 0,
+        "precision": null,
+        "recall": null,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "Synthetic clean validation traffic is generated independently of model training samples."
+      ]
+    },
+    {
+      "name": "Clean highway traffic",
+      "profile": "highway",
+      "attack": null,
+      "passed": true,
+      "checks": [
+        {
+          "name": "Traffic generated",
+          "passed": true,
+          "detail": "1050 normal frames."
+        },
+        {
+          "name": "No attack contamination",
+          "passed": true,
+          "detail": "0 attack frames."
+        },
+        {
+          "name": "False-positive rate at most 1%",
+          "passed": true,
+          "detail": "0.00%"
+        },
+        {
+          "name": "Normal safety state",
+          "passed": true,
+          "detail": "NORMAL"
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1050 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1050,
+        "forwarded": 1050,
+        "blocked": 0,
+        "dropped": 0,
+        "alerts": 0,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 2.5,
+        "processingP95Us": 5.3,
+        "simulatedLatencyP95Us": 574,
+        "tp": 0,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 0,
+        "precision": null,
+        "recall": null,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 0,
+        "inspectedAttackRecall": null,
+        "firstAttackAtMs": null,
+        "firstDetectionLatencyMs": null,
+        "safetyActivationLatencyMs": null,
+        "retainedFrames": 1050,
+        "completedFrames": 1050,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "OBSERVE",
+        "safetyState": "NORMAL"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 0,
+        "precision": null,
+        "recall": null,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "Separate synthetic highway holdout: training and validation use the highway profile with different random streams and phases. This is not training-domain transfer or real cross-dataset validation."
+      ]
+    },
+    {
+      "name": "Spoofing attack",
+      "profile": "urban",
+      "attack": "spoofing",
+      "passed": true,
+      "checks": [
+        {
+          "name": "Attack frames generated",
+          "passed": true,
+          "detail": "167 labelled attack frames."
+        },
+        {
+          "name": "Attack frames rejected",
+          "passed": true,
+          "detail": "167 rejected attack frames."
+        },
+        {
+          "name": "Attack recall at least 80%",
+          "passed": true,
+          "detail": "100.00%"
+        },
+        {
+          "name": "Normal traffic also evaluated",
+          "passed": true,
+          "detail": "1050 labelled normal frames."
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1217 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1217,
+        "forwarded": 953,
+        "blocked": 264,
+        "dropped": 0,
+        "alerts": 6,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 5.7,
+        "processingP95Us": 13.4,
+        "simulatedLatencyP95Us": 574,
+        "tp": 167,
+        "fp": 97,
+        "tn": 953,
+        "fn": 0,
+        "precision": 0.6325757575757576,
+        "recall": 1,
+        "falsePositiveRate": 0.09238095238095238,
+        "labelledFrames": 1217,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 167,
+        "inspectedAttackRecall": 1,
+        "firstAttackAtMs": 2000,
+        "firstDetectionLatencyMs": 0.582,
+        "safetyActivationLatencyMs": 760,
+        "retainedFrames": 1217,
+        "completedFrames": 1217,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "REQUEST_DEGRADE",
+        "safetyState": "DEGRADED"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 167,
+        "precision": null,
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1217,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "ID-whitelist baseline rejects unknown identifiers only; known-ID attacks expose its limitations.",
+        "Attack exposure: 2000 ms after 2000 ms clean warmup; 2000 ms settling time.",
+        "Configured intensity: 2 (Moderate). This benchmark does not establish performance at every intensity."
+      ]
+    },
+    {
+      "name": "Replay attack",
+      "profile": "urban",
+      "attack": "replay",
+      "passed": true,
+      "checks": [
+        {
+          "name": "Attack frames generated",
+          "passed": true,
+          "detail": "167 labelled attack frames."
+        },
+        {
+          "name": "Attack frames rejected",
+          "passed": true,
+          "detail": "167 rejected attack frames."
+        },
+        {
+          "name": "Attack recall at least 80%",
+          "passed": true,
+          "detail": "100.00%"
+        },
+        {
+          "name": "Normal traffic also evaluated",
+          "passed": true,
+          "detail": "1050 labelled normal frames."
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1217 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1217,
+        "forwarded": 953,
+        "blocked": 264,
+        "dropped": 0,
+        "alerts": 6,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 1.3,
+        "processingP95Us": 4.2,
+        "simulatedLatencyP95Us": 574,
+        "tp": 167,
+        "fp": 97,
+        "tn": 953,
+        "fn": 0,
+        "precision": 0.6325757575757576,
+        "recall": 1,
+        "falsePositiveRate": 0.09238095238095238,
+        "labelledFrames": 1217,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 167,
+        "inspectedAttackRecall": 1,
+        "firstAttackAtMs": 2000,
+        "firstDetectionLatencyMs": 0.582,
+        "safetyActivationLatencyMs": 760,
+        "retainedFrames": 1217,
+        "completedFrames": 1217,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "REQUEST_DEGRADE",
+        "safetyState": "DEGRADED"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 167,
+        "precision": null,
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1217,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "ID-whitelist baseline rejects unknown identifiers only; known-ID attacks expose its limitations.",
+        "Attack exposure: 2000 ms after 2000 ms clean warmup; 2000 ms settling time.",
+        "Configured intensity: 2 (Moderate). This benchmark does not establish performance at every intensity."
+      ]
+    },
+    {
+      "name": "Flooding attack",
+      "profile": "urban",
+      "attack": "flooding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "Attack frames generated",
+          "passed": true,
+          "detail": "12000 labelled attack frames."
+        },
+        {
+          "name": "Attack frames rejected",
+          "passed": true,
+          "detail": "6968 rejected attack frames."
+        },
+        {
+          "name": "Inspected-attack recall at least 80%",
+          "passed": true,
+          "detail": "100.00% among 6968 inspected attacks; overall recall 58.07%; 5032 attack frames dropped before inspection."
+        },
+        {
+          "name": "Normal traffic also evaluated",
+          "passed": true,
+          "detail": "1050 labelled normal frames."
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "13050 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 13050,
+        "forwarded": 523,
+        "blocked": 7495,
+        "dropped": 5032,
+        "alerts": 30,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 8.2,
+        "processingP95Us": 62.6,
+        "simulatedLatencyP95Us": 551858,
+        "tp": 6968,
+        "fp": 527,
+        "tn": 523,
+        "fn": 5032,
+        "precision": 0.9296864576384256,
+        "recall": 0.5806666666666667,
+        "falsePositiveRate": 0.5019047619047619,
+        "labelledFrames": 13050,
+        "unlabelled": 0,
+        "attackDropped": 5032,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 6968,
+        "inspectedAttackRecall": 1,
+        "firstAttackAtMs": 2000,
+        "firstDetectionLatencyMs": 0.582,
+        "safetyActivationLatencyMs": 260,
+        "retainedFrames": 13050,
+        "completedFrames": 13050,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "REQUEST_DEGRADE",
+        "safetyState": "DEGRADED"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 12000,
+        "precision": null,
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "labelledFrames": 13050,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "ID-whitelist baseline rejects unknown identifiers only; known-ID attacks expose its limitations.",
+        "Attack exposure: 2000 ms after 2000 ms clean warmup; 2000 ms settling time.",
+        "Configured intensity: 4 (Severe). This benchmark does not establish performance at every intensity.",
+        "Flooding deliberately exceeds ingress capacity. Its acceptance check covers filtering of inspected attacks; overall recall includes attack drops as false negatives and is reported separately."
+      ]
+    },
+    {
+      "name": "Fuzzing attack",
+      "profile": "urban",
+      "attack": "fuzzing",
+      "passed": true,
+      "checks": [
+        {
+          "name": "Attack frames generated",
+          "passed": true,
+          "detail": "167 labelled attack frames."
+        },
+        {
+          "name": "Attack frames rejected",
+          "passed": true,
+          "detail": "167 rejected attack frames."
+        },
+        {
+          "name": "Attack recall at least 80%",
+          "passed": true,
+          "detail": "100.00%"
+        },
+        {
+          "name": "Normal traffic also evaluated",
+          "passed": true,
+          "detail": "1050 labelled normal frames."
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1217 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1217,
+        "forwarded": 1050,
+        "blocked": 167,
+        "dropped": 0,
+        "alerts": 129,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 1.3,
+        "processingP95Us": 3.8,
+        "simulatedLatencyP95Us": 574,
+        "tp": 167,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1217,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 167,
+        "inspectedAttackRecall": 1,
+        "firstAttackAtMs": 2000,
+        "firstDetectionLatencyMs": 0.558,
+        "safetyActivationLatencyMs": null,
+        "retainedFrames": 1217,
+        "completedFrames": 1217,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "FILTER",
+        "safetyState": "NORMAL"
+      },
+      "baseline": {
+        "tp": 167,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1217,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "ID-whitelist baseline rejects unknown identifiers only; known-ID attacks expose its limitations.",
+        "Attack exposure: 2000 ms after 2000 ms clean warmup; 2000 ms settling time.",
+        "Configured intensity: 2 (Moderate). This benchmark does not establish performance at every intensity."
+      ]
+    },
+    {
+      "name": "Payload attack",
+      "profile": "urban",
+      "attack": "payload",
+      "passed": true,
+      "checks": [
+        {
+          "name": "Attack frames generated",
+          "passed": true,
+          "detail": "25 labelled attack frames."
+        },
+        {
+          "name": "Attack frames rejected",
+          "passed": true,
+          "detail": "25 rejected attack frames."
+        },
+        {
+          "name": "Attack recall at least 80%",
+          "passed": true,
+          "detail": "100.00%"
+        },
+        {
+          "name": "Normal traffic also evaluated",
+          "passed": true,
+          "detail": "1025 labelled normal frames."
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1050 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1050,
+        "forwarded": 1025,
+        "blocked": 25,
+        "dropped": 0,
+        "alerts": 4,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 2.5,
+        "processingP95Us": 7,
+        "simulatedLatencyP95Us": 574,
+        "tp": 25,
+        "fp": 0,
+        "tn": 1025,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 25,
+        "inspectedAttackRecall": 1,
+        "firstAttackAtMs": 2060,
+        "firstDetectionLatencyMs": 0.304,
+        "safetyActivationLatencyMs": 500,
+        "retainedFrames": 1050,
+        "completedFrames": 1050,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "REQUEST_DEGRADE",
+        "safetyState": "DEGRADED"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1025,
+        "fn": 25,
+        "precision": null,
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "ID-whitelist baseline rejects unknown identifiers only; known-ID attacks expose its limitations.",
+        "Attack exposure: 2000 ms after 2000 ms clean warmup; 2000 ms settling time.",
+        "Configured intensity: 2 (Moderate). This benchmark does not establish performance at every intensity."
+      ]
+    },
+    {
+      "name": "Stealth attack",
+      "profile": "urban",
+      "attack": "stealth",
+      "passed": true,
+      "checks": [
+        {
+          "name": "Attack frames generated",
+          "passed": true,
+          "detail": "100 labelled attack frames."
+        },
+        {
+          "name": "Attack frames rejected",
+          "passed": true,
+          "detail": "80 rejected attack frames."
+        },
+        {
+          "name": "Attack recall at least 80%",
+          "passed": true,
+          "detail": "80.00%"
+        },
+        {
+          "name": "Normal traffic also evaluated",
+          "passed": true,
+          "detail": "950 labelled normal frames."
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1050 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1050,
+        "forwarded": 943,
+        "blocked": 107,
+        "dropped": 0,
+        "alerts": 8,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 2.3,
+        "processingP95Us": 6.7,
+        "simulatedLatencyP95Us": 574,
+        "tp": 80,
+        "fp": 27,
+        "tn": 923,
+        "fn": 20,
+        "precision": 0.7476635514018691,
+        "recall": 0.8,
+        "falsePositiveRate": 0.028421052631578948,
+        "labelledFrames": 1050,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 100,
+        "inspectedAttackRecall": 0.8,
+        "firstAttackAtMs": 2000,
+        "firstDetectionLatencyMs": 400.3,
+        "safetyActivationLatencyMs": 960,
+        "retainedFrames": 1050,
+        "completedFrames": 1050,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "REQUEST_DEGRADE",
+        "safetyState": "DEGRADED"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 950,
+        "fn": 100,
+        "precision": null,
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "ID-whitelist baseline rejects unknown identifiers only; known-ID attacks expose its limitations.",
+        "Attack exposure: 2000 ms after 2000 ms clean warmup; 2000 ms settling time.",
+        "Configured intensity: 4 (Severe). This benchmark does not establish performance at every intensity."
+      ]
+    },
+    {
+      "name": "Analyst disconnected",
+      "profile": "urban",
+      "attack": "payload",
+      "passed": true,
+      "checks": [
+        {
+          "name": "Analyst remains disconnected",
+          "passed": true,
+          "detail": "Connected: false"
+        },
+        {
+          "name": "Gateway protection remains active",
+          "passed": true,
+          "detail": "25 rejected; recall 100.00%."
+        },
+        {
+          "name": "Normal traffic can still pass",
+          "passed": true,
+          "detail": "1025 forwarded normal frames."
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1050 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1050,
+        "forwarded": 1025,
+        "blocked": 25,
+        "dropped": 0,
+        "alerts": 4,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 1.7,
+        "processingP95Us": 3,
+        "simulatedLatencyP95Us": 574,
+        "tp": 25,
+        "fp": 0,
+        "tn": 1025,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 25,
+        "inspectedAttackRecall": 1,
+        "firstAttackAtMs": 2060,
+        "firstDetectionLatencyMs": 0.304,
+        "safetyActivationLatencyMs": 500,
+        "retainedFrames": 1050,
+        "completedFrames": 1050,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "REQUEST_DEGRADE",
+        "safetyState": "DEGRADED"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1025,
+        "fn": 25,
+        "precision": null,
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "Gateway-local rules are evaluated with the analyst link disconnected."
+      ]
+    },
+    {
+      "name": "Safety latch and explicit recovery",
+      "profile": "urban",
+      "attack": "payload",
+      "passed": true,
+      "checks": [
+        {
+          "name": "Independent safety task activates degradation",
+          "passed": true,
+          "detail": "DEGRADED"
+        },
+        {
+          "name": "Recovery rejected during active attack",
+          "passed": true,
+          "detail": "Safety state during attack: DEGRADED."
+        },
+        {
+          "name": "Safety remains latched after quiet traffic",
+          "passed": true,
+          "detail": "DEGRADED"
+        },
+        {
+          "name": "Quiet interval enables recovery",
+          "passed": true,
+          "detail": "Eligible: true"
+        },
+        {
+          "name": "Explicit recovery restores normal safety",
+          "passed": true,
+          "detail": "NORMAL"
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1377 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1377,
+        "forwarded": 1312,
+        "blocked": 65,
+        "dropped": 0,
+        "alerts": 5,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 1.3,
+        "processingP95Us": 2.5,
+        "simulatedLatencyP95Us": 574,
+        "tp": 38,
+        "fp": 27,
+        "tn": 1312,
+        "fn": 0,
+        "precision": 0.5846153846153846,
+        "recall": 1,
+        "falsePositiveRate": 0.020164301717699777,
+        "labelledFrames": 1377,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 38,
+        "inspectedAttackRecall": 1,
+        "firstAttackAtMs": 2000,
+        "firstDetectionLatencyMs": 0.304,
+        "safetyActivationLatencyMs": 560,
+        "retainedFrames": 1377,
+        "completedFrames": 1377,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "OBSERVE",
+        "safetyState": "NORMAL"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1339,
+        "fn": 38,
+        "precision": null,
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1377,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "Recovery is operator requested after a quiet interval; elapsed quiet time alone must not reset the safety latch."
+      ]
+    },
+    {
+      "name": "Deterministic seeded replay",
+      "profile": "urban",
+      "attack": "spoofing",
+      "passed": true,
+      "checks": [
+        {
+          "name": "Replay population is nonempty",
+          "passed": true,
+          "detail": "1217 and 1217 frames."
+        },
+        {
+          "name": "Same seed produces same traffic and decisions",
+          "passed": true,
+          "detail": "1217 and 1217 frames; host timing excluded."
+        },
+        {
+          "name": "Same seed produces same classification counts",
+          "passed": true,
+          "detail": "Confusion matrices compared in full."
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1217 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1217,
+        "forwarded": 953,
+        "blocked": 264,
+        "dropped": 0,
+        "alerts": 6,
+        "busLoadPct": 4.87,
+        "queueDepth": 0,
+        "processingP50Us": 2.5,
+        "processingP95Us": 7.9,
+        "simulatedLatencyP95Us": 574,
+        "tp": 167,
+        "fp": 97,
+        "tn": 953,
+        "fn": 0,
+        "precision": 0.6325757575757576,
+        "recall": 1,
+        "falsePositiveRate": 0.09238095238095238,
+        "labelledFrames": 1217,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 167,
+        "inspectedAttackRecall": 1,
+        "firstAttackAtMs": 2000,
+        "firstDetectionLatencyMs": 0.582,
+        "safetyActivationLatencyMs": 760,
+        "retainedFrames": 1217,
+        "completedFrames": 1217,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "REQUEST_DEGRADE",
+        "safetyState": "DEGRADED"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1050,
+        "fn": 167,
+        "precision": null,
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1217,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements."
+      ]
+    },
+    {
+      "name": "Evaluator label isolation",
+      "profile": "urban",
+      "attack": null,
+      "passed": true,
+      "checks": [
+        {
+          "name": "Both normal and attack ground truth exercised",
+          "passed": true,
+          "detail": "1050 source frames."
+        },
+        {
+          "name": "Ground truth cannot influence detector decisions",
+          "passed": true,
+          "detail": "1050 identical frames replayed with inverted labels."
+        },
+        {
+          "name": "Identical evaluation population",
+          "passed": true,
+          "detail": "1050 labelled retained frames for both detectors."
+        }
+      ],
+      "metrics": {
+        "received": 1050,
+        "forwarded": 1025,
+        "blocked": 25,
+        "dropped": 0,
+        "alerts": 4,
+        "busLoadPct": 2.45,
+        "queueDepth": 0,
+        "processingP50Us": 1.3,
+        "processingP95Us": 3.4,
+        "simulatedLatencyP95Us": 574,
+        "tp": 25,
+        "fp": 0,
+        "tn": 1025,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0,
+        "attackDropped": 0,
+        "normalDropped": 0,
+        "inspectedAttackFrames": 25,
+        "inspectedAttackRecall": 1,
+        "firstAttackAtMs": 2060,
+        "firstDetectionLatencyMs": 0.304,
+        "safetyActivationLatencyMs": 500,
+        "retainedFrames": 1050,
+        "completedFrames": 1050,
+        "evictedFrames": 0,
+        "pendingFrames": 0,
+        "scoredWindow": "retained frames",
+        "finalStatus": "REQUEST_DEGRADE",
+        "safetyState": "DEGRADED"
+      },
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 1025,
+        "fn": 25,
+        "precision": null,
+        "recall": 0,
+        "falsePositiveRate": 0,
+        "labelledFrames": 1050,
+        "unlabelled": 0
+      },
+      "notes": [
+        "Confusion matrices use exactly the same retained frames; only BLOCK is a positive detection. Queue DROP is availability loss, never automatic attack detection. Operational counters are cumulative.",
+        "First-detection latency uses the first attack BLOCK decision time (arrival plus modeled queue/rule latency) minus first labelled attack arrival. Safety latency uses the independent modeled activation time. Onsets are preserved throughout the run; these are not hardware measurements.",
+        "Classification statistics may change when labels change; traffic decisions must stay identical."
+      ]
+    }
+  ],
+  "limitations": [
+    "All validation traffic and model training data are synthetic. No public attack dataset or physical vehicle trace was used.",
+    "Urban/highway cases are separate synthetic profile holdouts with profile-specific training, not real cross-dataset or training-domain transfer evaluation.",
+    "Modeled bus latency and safety response do not establish hardware timing, electrical behavior, certification, or vehicle safety.",
+    "Host processing times are measured on this computer; seeded reproducibility excludes host timing and report creation time.",
+    "The ID-whitelist baseline and Sentinel are scored over the same retained labelled frames. Only BLOCK is a positive detection. Queue DROP counts as FN for attacks or TN for normal traffic; availability loss is reported separately by the dropped counter.",
+    "Null precision, recall or false-positive rate means its denominator is zero; it does not mean perfect performance."
+  ]
+}

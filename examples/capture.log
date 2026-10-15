@@ -1,0 +1,4 @@
+# Classical candump format; timestamps are seconds. No labels are present.
+(1700000000.000000) can0 120#0000D80E00000000
+(1700000000.020000) can0 120#0000D80E00000001
+(1700000000.101000) can0 777#FFFFFFFFFFFFFFFF

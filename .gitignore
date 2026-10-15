@@ -1,0 +1,15 @@
+data/
+node_modules/
+artifacts/*.tmp
+*.log
+.DS_Store
+dist/
+.wrangler/
+.env
+.env.*
+artifacts/redesign-before/
+artifacts/font-source.css
+artifacts/project-reference.png
+artifacts/browser/
+*.zip
+!examples/capture.log
