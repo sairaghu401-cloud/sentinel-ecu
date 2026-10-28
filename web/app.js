@@ -2,6 +2,15 @@ const browserMode = document.documentElement.dataset.runtime === 'browser';
 const browserRuntime = browserMode ? await import('./browser-runtime.js') : null;
 const $ = (id) => document.getElementById(id);
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const EASE = 'cubic-bezier(.2,.8,.2,1)';
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const LEVELS = ['OBSERVE', 'WARN', 'FILTER', 'REQUEST_DEGRADE'];
+// One attention animation at a time; a higher priority channel finishes a lower one.
+const ATTENTION_PRIORITY = { inspector: 1, chart: 1, timeline: 1, safety: 2, gateway: 3 };
+const CHART = { width: 800, height: 186, left: 40, right: 12, top: 12, bottom: 30 };
+const CHART_SERIES = [['received', '#b9561b'], ['forwarded', '#507b9b'], ['blocked', '#b33e36']];
+const EVENT_HIGHLIGHT = { info: '#eef1f4', warning: '#fbeedb', critical: '#f9e3dc' };
+const SAFETY_BANNERS = { REQUESTED: 'Degradation requested', DEGRADED: 'Degraded · safety latched', NORMAL: 'Normal operation restored' };
 const formatNumber = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 const viewCopy = {
   overview: ['Overview', 'Vehicle security workbench', 'A live CAN network. Six attack scenarios. Every gateway decision recorded.'],
@@ -36,6 +45,18 @@ let lastEventSignature = '';
 let lastFrameSignature = '';
 let lastRulesSignature = '';
 let validationStatusTimer;
+let gatewayLevel = null;
+let gaugeShiftTimer;
+let safetyState = null;
+let shownEventIds = [];
+let frameRows = new Map();
+let lastFrameSeq = -1;
+let chartNodes = null;
+let chartDrawn = false;
+let attackWindows = new Map();
+const attention = { owner: null, until: 0, animations: [] };
+const INJECT_HOLD_MS = 600, INJECT_ARM_MS = 5000, INJECT_SLOP_PX = 16;
+const inject = { holdTimer: 0, armTimer: 0, releaseTimer: 0, held: false, ring: [], pointerId: null, token: 0 };
 
 function number(value, fallback = 0) {
   return Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -61,6 +82,23 @@ function svgElement(tag, attributes = {}, content) {
   for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
   if (content != null) node.textContent = String(content);
   return node;
+}
+// Motion marks real model state changes only. Reduced motion receives the end state instantly.
+function play(node, keyframes, options) {
+  if (reducedMotion.matches || !node || typeof node.animate !== 'function') return null;
+  return node.animate(keyframes, options);
+}
+function attend(channel, duration, start) {
+  if (reducedMotion.matches) return false;
+  const now = performance.now();
+  const other = now < attention.until && attention.owner !== channel ? attention.owner : null;
+  if (other && ATTENTION_PRIORITY[other] >= ATTENTION_PRIORITY[channel]) return false;
+  if (other) attention.animations.forEach(animation => animation.finish());
+  attention.animations = attention.owner === channel ? attention.animations.filter(animation => animation.playState === 'running') : [];
+  attention.owner = channel;
+  attention.until = Math.max(other ? 0 : attention.until, now + duration);
+  attention.animations.push(...start().filter(Boolean));
+  return true;
 }
 function notify(message, error = false) {
   clearTimeout(notificationTimer);
@@ -115,6 +153,7 @@ function updateControls() {
   const imported = state?.source === 'imported';
   for (const id of ['reset', 'reset-import']) $(id).disabled = disabled;
   for (const id of ['toggle-run', 'speed', 'analyst-toggle', 'inject-attack']) $(id).disabled = disabled || imported;
+  if ($('inject-attack').disabled && ($('inject-attack').hasAttribute('data-armed') || (inject.pointerId !== null && !inject.held))) { endInjectHold(); setInjectArmed(false); }
   $('step').disabled = disabled || imported || Boolean(state?.running);
   $('clear-attacks').disabled = disabled || imported || !state?.activeAttacks?.length;
   $('recover').disabled = disabled || imported || !state?.safety?.recoveryEligible;
@@ -129,8 +168,22 @@ function updateControls() {
   $('speed').value = String(state?.speed ?? 1);
 }
 
+// One underline element slides between tabs; geometry changes from resizing or fonts move it instantly.
+function placeTabIndicator(slide) {
+  const tab = document.querySelector('.nav-item.active');
+  if (!tab) return;
+  const inset = parseFloat(getComputedStyle(tabIndicator.parentElement).getPropertyValue('--tab-inset')) || 0;
+  const transform = `translateX(${tab.offsetLeft + inset}px) scaleX(${Math.max(0, tab.offsetWidth - inset * 2) / 100})`;
+  if (slide && tabIndicator.style.transform) { tabIndicator.style.transform = transform; return; }
+  tabIndicator.classList.add('instant');
+  tabIndicator.style.transform = transform;
+  void tabIndicator.offsetWidth;
+  tabIndicator.classList.remove('instant');
+}
+
 function setView(name, focus = false) {
   if (!viewCopy[name]) name = 'overview';
+  const changed = name !== activeView;
   activeView = name;
   for (const tab of document.querySelectorAll('[data-tab]')) {
     const selected = tab.dataset.tab === name;
@@ -140,14 +193,15 @@ function setView(name, focus = false) {
     $(`panel-${tab.dataset.tab}`).hidden = !selected;
     if (selected && focus) tab.focus();
   }
+  placeTabIndicator(changed);
   text('breadcrumb-view', viewCopy[name][0]);
   text('page-title', viewCopy[name][1]);
   text('page-description', viewCopy[name][2]);
   document.title = `${viewCopy[name][0]} · Sentinel ECU`;
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (!reducedMotion.matches) {
     const panel = $(`panel-${name}`);
     panel.getAnimations().forEach(animation => animation.cancel());
-    panel.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 300, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    panel.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 300, easing: EASE });
   }
   if (location.hash !== `#${name}`) history.replaceState(null, '', `#${name}`);
   if (name === 'traffic') renderFrames(true);
@@ -158,11 +212,14 @@ function renderSnapshot(snapshot) {
   const previousSession = state?.sessionId;
   state = { ...snapshot, sessionId: snapshot.sessionId || state?.sessionId };
   connectionStatus(true);
-  if (previousSession && state.sessionId && previousSession !== state.sessionId) {
+  const sessionChanged = Boolean(previousSession && state.sessionId && previousSession !== state.sessionId);
+  if (sessionChanged) {
     selectedFrame = null;
     holdFrames(false);
     $('frame-detail').hidden = true;
     lastFrameSignature = '';
+    lastEventSignature = '';
+    chartDrawn = false;
   }
   if (!settingsDirty) {
     $('profile').value = state.profile;
@@ -184,8 +241,8 @@ function renderSnapshot(snapshot) {
   text('host-latency', count(state.metrics.processingP95Us));
   text('status-badge', String(state.status).replaceAll('_', ' '));
   $('status-badge').className = `status-badge ${String(state.status).toLowerCase()}`;
-  $('risk-fill').style.width = `${Math.max(0, Math.min(100, number(state.risk)))}%`;
-  $('risk-fill').style.background = number(state.risk) > 65 ? 'var(--red)' : number(state.risk) > 25 ? 'var(--amber)' : 'var(--cyan)';
+  $('risk-fill').style.transform = `scaleX(${Math.max(0, Math.min(100, number(state.risk))) / 100})`;
+  $('risk-fill').style.background = number(state.risk) > 65 ? 'var(--gauge-high)' : number(state.risk) > 25 ? 'var(--gauge-mid)' : 'var(--gauge-low)';
   text('bus-load', `${number(state.metrics.busLoadPct).toFixed(1)}%`);
   text('queue-depth', count(state.metrics.queueDepth));
   text('network-state', state.source === 'imported' ? 'REPLAY COMPLETE' : state.running ? 'TRAFFIC LIVE' : 'PAUSED');
@@ -193,6 +250,7 @@ function renderSnapshot(snapshot) {
   $('network-visual').classList.toggle('running', Boolean(state.running));
   const gatewayModes = { OBSERVE: 'Rules active · observing', WARN: 'Rules active · warning', FILTER: 'Rules active · filtering', REQUEST_DEGRADE: 'Degradation requested' };
   text('gateway-mode', gatewayModes[state.status] || 'Gateway active');
+  renderGatewayLevel(sessionChanged);
   const analyst = state.analyst;
   const holds = analyst.activeHolds || [];
   const analystStatus = !analyst.connected ? 'Offline' : holds.length ? 'Payload anomaly detected' : !analyst.processed ? 'Waiting for payloads' : 'Monitoring · no active payload hold';
@@ -240,12 +298,39 @@ function renderSnapshot(snapshot) {
   $('ecu-dot').style.fill = state.vehicle.motorEnabled ? 'var(--cyan)' : 'var(--amber)';
   text('session-label', state.sessionId ? `Session ${String(state.sessionId).slice(0, 12)}` : `Seed ${state.seed} · ${state.profile}`);
   text('attack-hint', state.source === 'imported' ? 'Reset to a new simulation to inject an attack.' : state.running ? 'Attacks affect the simulated network only.' : 'Run the model to advance an injected attack.');
+  // Live only while an injected source is actually generating frames: scheduled and running.
+  $('main-content').dataset.attackLive = String(Boolean(state.running && state.source !== 'imported' && state.activeAttacks?.length));
   renderAttacks();
+  trackAttackWindows(sessionChanged);
   renderChart();
+  renderSafetyBanner(sessionChanged);
   renderEvents();
   renderRules();
   if (activeView === 'traffic') renderFrames();
   updateControls();
+  if (document.body.classList.contains('awaiting-snapshot')) {
+    // Commit the first real values, then drop the placeholders, then enable transitions:
+    // each step is flushed separately so nothing animates out of the loading state.
+    void document.body.offsetWidth;
+    document.body.classList.remove('awaiting-snapshot');
+    void document.body.offsetWidth;
+    document.body.classList.add('motion-ready');
+  }
+}
+
+// The gateway node and gauge share one 350 ms level transition; only escalation pulses.
+function renderGatewayLevel(sessionChanged) {
+  const level = LEVELS.includes(state.status) ? state.status : 'OBSERVE';
+  const previous = sessionChanged ? null : gatewayLevel;
+  gatewayLevel = level;
+  $('main-content').dataset.gatewayLevel = level.toLowerCase();
+  if (!previous || previous === level) return;
+  const meter = $('risk-fill').parentElement;
+  meter.classList.add('level-shift');
+  clearTimeout(gaugeShiftTimer);
+  gaugeShiftTimer = setTimeout(() => meter.classList.remove('level-shift'), 350);
+  if (LEVELS.indexOf(level) <= LEVELS.indexOf(previous) || activeView !== 'overview') return;
+  attend('gateway', 600, () => [play(document.querySelector('.gateway-pulse'), [{ opacity: 0.85, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.6)' }], { duration: 600, easing: EASE })]);
 }
 
 function renderAttacks() {
@@ -264,10 +349,65 @@ function renderAttacks() {
   }));
 }
 
+// Attack windows come only from the engine's injected-attack schedule, never from frame labels.
+function trackAttackWindows(sessionChanged) {
+  if (sessionChanged) attackWindows = new Map();
+  const now = number(state.timeMs);
+  const live = new Set();
+  for (const attack of state.activeAttacks || []) {
+    const key = `${attack.type}:${attack.targetId}:${attack.startsAtMs}`;
+    live.add(key);
+    attackWindows.set(key, { start: number(attack.startsAtMs), end: Math.min(number(attack.endsAtMs), now), scheduledEnd: number(attack.endsAtMs), open: true });
+  }
+  for (const [key, window] of attackWindows) {
+    if (!window.open && window.end < now - 120000) attackWindows.delete(key);
+    if (!window.open || live.has(key)) continue;
+    window.open = false;
+    // Stopped early: use the engine's own "sources stopped" timestamp, else the last time it was seen running.
+    const stopped = (state.events || []).find((event) => event.title === 'Attack sources stopped' && event.timestampMs >= window.start && event.timestampMs <= now);
+    window.end = now >= window.scheduledEnd ? window.scheduledEnd : stopped ? number(stopped.timestampMs) : window.end;
+  }
+}
+
+function chartScaffold(chart) {
+  if (chartNodes && chart.contains(chartNodes.plot)) return chartNodes;
+  const { width, height, left, right, top, bottom } = CHART;
+  const plotW = width - left - right, plotH = height - top - bottom;
+  const defs = svgElement('defs');
+  const reveal = svgElement('rect', { class: 'chart-reveal', x: 0, y: 0, width, height });
+  const clip = svgElement('clipPath', { id: 'chart-reveal' });
+  clip.append(reveal);
+  defs.append(clip);
+  const windows = svgElement('g', { class: 'chart-attack-windows' });
+  const grid = [], yLabels = [], xLabels = [];
+  for (let line = 0; line <= 3; line++) {
+    const yy = top + plotH - plotH * line / 3;
+    grid.push(svgElement('line', { x1: left, x2: width - right, y1: yy, y2: yy, stroke: '#d9d9cf', 'stroke-width': 1, 'stroke-dasharray': '3 5' }));
+    yLabels.push(svgElement('text', { x: left - 10, y: yy + 3, fill: '#596a7b', 'font-size': 9, 'font-family': 'Consolas, monospace', 'text-anchor': 'end' }));
+  }
+  for (let line = 0; line <= 4; line++) {
+    xLabels.push(svgElement('text', { x: left + plotW * line / 4, y: height - 8, fill: '#596a7b', 'font-size': 9, 'font-family': 'Consolas, monospace', 'text-anchor': line === 0 ? 'start' : line === 4 ? 'end' : 'middle' }));
+  }
+  const plot = svgElement('g', { 'clip-path': 'url(#chart-reveal)' });
+  const area = svgElement('path', { fill: '#b9561b', opacity: '.07' });
+  const lines = {}, dots = {};
+  plot.append(area);
+  for (const [key, color] of CHART_SERIES) {
+    lines[key] = svgElement('path', { fill: 'none', stroke: color, 'stroke-width': key === 'received' ? 2 : 1.6, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+    dots[key] = svgElement('circle', { r: 3, fill: color, display: 'none' });
+    plot.append(lines[key], dots[key]);
+  }
+  chart.replaceChildren(defs, windows, ...grid, ...yLabels, ...xLabels, plot);
+  chartNodes = { reveal, windows, yLabels, xLabels, plot, area, lines, dots };
+  return chartNodes;
+}
+
+// The chart's nodes persist; each update rewrites attributes in place, so nothing is torn down and redrawn.
 function renderChart() {
   const chart = $('traffic-chart');
+  const nodes = chartScaffold(chart);
   const series = (state?.series || []).slice(-60);
-  const width = 800, height = 186, left = 40, right = 12, top = 12, bottom = 30;
+  const { width, left, right, top, bottom, height } = CHART;
   const plotW = width - left - right, plotH = height - top - bottom;
   const maxValue = Math.max(50, ...series.map((sample) => Math.max(number(sample.received), number(sample.forwarded), number(sample.blocked))));
   const maxY = Math.ceil(maxValue / 50) * 50;
@@ -275,32 +415,50 @@ function renderChart() {
   const end = series.length ? series[series.length - 1].timeMs : 10000;
   const x = (time, index) => series.length < 2 ? left + index * plotW : left + (time - start) / Math.max(1, end - start) * plotW;
   const y = (value) => top + plotH - number(value) / maxY * plotH;
-  const nodes = [];
-  for (let line = 0; line <= 3; line++) {
-    const value = maxY * line / 3;
-    const yy = y(value);
-    nodes.push(svgElement('line', { x1: left, x2: width - right, y1: yy, y2: yy, stroke: '#d9d9cf', 'stroke-width': 1, 'stroke-dasharray': '3 5' }));
-    nodes.push(svgElement('text', { x: left - 10, y: yy + 3, fill: '#596a7b', 'font-size': 9, 'font-family': 'Consolas, monospace', 'text-anchor': 'end' }, count(value)));
-  }
-  for (let line = 0; line <= 4; line++) {
-    const xx = left + plotW * line / 4;
-    const time = start + (end - start) * line / 4;
-    nodes.push(svgElement('text', { x: xx, y: height - 8, fill: '#596a7b', 'font-size': 9, 'font-family': 'Consolas, monospace', 'text-anchor': line === 0 ? 'start' : line === 4 ? 'end' : 'middle' }, `${(time / 1000).toFixed(0)}s`));
-  }
-  for (const [key, color] of [['received', '#b9561b'], ['forwarded', '#507b9b'], ['blocked', '#b33e36']]) {
-    if (!series.length) continue;
+  nodes.yLabels.forEach((label, line) => { label.textContent = count(maxY * line / 3); });
+  nodes.xLabels.forEach((label, line) => { label.textContent = `${((start + (end - start) * line / 4) / 1000).toFixed(0)}s`; });
+  for (const [key] of CHART_SERIES) {
     const points = series.map((sample, index) => [x(sample.timeMs, index), y(sample[key])]);
     const path = points.map(([xx, yy], index) => `${index === 0 ? 'M' : 'L'}${xx.toFixed(2)} ${yy.toFixed(2)}`).join(' ');
-    if (key === 'received' && points.length > 1) nodes.push(svgElement('path', { d: `${path} L${points.at(-1)[0]} ${top + plotH} L${points[0][0]} ${top + plotH} Z`, fill: '#b9561b', opacity: '.07' }));
-    nodes.push(svgElement('path', { d: path, fill: 'none', stroke: color, 'stroke-width': key === 'received' ? 2 : 1.6, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-    if (points.length === 1) nodes.push(svgElement('circle', { cx: points[0][0], cy: points[0][1], r: 3, fill: color }));
+    nodes.lines[key].setAttribute('d', path);
+    if (key === 'received') nodes.area.setAttribute('d', points.length > 1 ? `${path} L${points.at(-1)[0]} ${top + plotH} L${points[0][0]} ${top + plotH} Z` : '');
+    nodes.dots[key].setAttribute('display', points.length === 1 ? 'inline' : 'none');
+    if (points.length === 1) { nodes.dots[key].setAttribute('cx', points[0][0]); nodes.dots[key].setAttribute('cy', points[0][1]); }
   }
-  chart.replaceChildren(...nodes);
-  chart.setAttribute('aria-label', series.length ? `CAN frames per simulated second from ${(start / 1000).toFixed(1)} to ${(end / 1000).toFixed(1)} seconds. Latest received ${series.at(-1).received}, forwarded ${series.at(-1).forwarded}, blocked ${series.at(-1).blocked}.` : 'No traffic data. Run the simulation to populate the chart.');
+  const spans = [];
+  if (series.length > 1) {
+    for (const window of [...attackWindows.values()].sort((a, b) => a.start - b.start)) {
+      const from = Math.max(window.start, start), to = Math.min(window.end, end);
+      if (to <= from) continue;
+      if (spans.length && from <= spans.at(-1)[1]) spans.at(-1)[1] = Math.max(spans.at(-1)[1], to);
+      else spans.push([from, to]);
+    }
+  }
+  nodes.windows.replaceChildren(...spans.flatMap(([from, to]) => [
+    svgElement('rect', { class: 'chart-attack-window', x: x(from).toFixed(2), y: top, width: (x(to) - x(from)).toFixed(2), height: plotH }),
+    svgElement('rect', { class: 'chart-attack-edge', x: x(from).toFixed(2), y: top, width: (x(to) - x(from)).toFixed(2), height: 2 }),
+  ]));
+  // Draw in the first time a line exists: a single one-second sample is only dots.
+  if (!series.length) chartDrawn = false;
+  else if (series.length > 1 && !chartDrawn) {
+    chartDrawn = true;
+    if (activeView === 'overview') attend('chart', 700, () => [play(nodes.reveal, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 700, easing: EASE })]);
+  }
+  chart.setAttribute('aria-label', series.length ? `CAN frames per simulated second from ${(start / 1000).toFixed(1)} to ${(end / 1000).toFixed(1)} seconds. Latest received ${series.at(-1).received}, forwarded ${series.at(-1).forwarded}, blocked ${series.at(-1).blocked}.${spans.length ? ` Shaded regions mark ${spans.length} injected attack window${spans.length === 1 ? '' : 's'}.` : ''}` : 'No traffic data. Run the simulation to populate the chart.');
   $('chart-empty').hidden = series.length > 0;
   $('chart-empty').querySelector('strong').textContent = state?.metrics?.received ? 'Collecting the first second' : 'No traffic recorded';
   $('chart-empty').lastElementChild.textContent = state?.metrics?.received ? 'Continue the model to build its traffic history.' : 'Run the simulation to observe live CAN traffic.';
   text('chart-window', `${(start / 1000).toFixed(0)}–${(series.length ? end / 1000 : 0).toFixed(0)} s`);
+}
+
+function eventRow(event) {
+  const row = element('div', `event ${['warning', 'critical'].includes(event.severity) ? event.severity : 'info'}`);
+  const content = element('div', 'event-text');
+  content.append(element('div', 'event-title', event.title), element('div', 'event-detail', event.detail));
+  const time = element('span', 'event-time', clock(event.timestampMs));
+  time.title = 'Simulated time';
+  row.append(element('i', 'event-marker'), content, time);
+  return row;
 }
 
 function renderEvents() {
@@ -308,20 +466,45 @@ function renderEvents() {
   const signature = `${events.length}:${events[0]?.id}:${events[0]?.timestampMs}`;
   text('event-count', `${count(events.length)} events`);
   if (signature === lastEventSignature) return;
+  const continuing = lastEventSignature !== '' && shownEventIds.length > 0;
   lastEventSignature = signature;
   if (!events.length) {
+    shownEventIds = [];
     $('event-list').replaceChildren(element('div', 'empty-state compact', 'No security events yet. Start a run to generate evidence.'));
     return;
   }
-  $('event-list').replaceChildren(...events.slice(0, 12).map((event) => {
-    const row = element('div', `event ${['warning', 'critical'].includes(event.severity) ? event.severity : 'info'}`);
-    const content = element('div', 'event-text');
-    content.append(element('div', 'event-title', event.title), element('div', 'event-detail', event.detail));
-    const time = element('span', 'event-time', clock(event.timestampMs));
-    time.title = 'Simulated time';
-    row.append(element('i', 'event-marker'), content, time);
-    return row;
-  }));
+  const visible = events.slice(0, 12);
+  // Keep existing rows so a running highlight is not cut off; only genuinely new events are inserted.
+  const freshCount = continuing ? visible.findIndex((event) => event.id === shownEventIds[0]) : -1;
+  shownEventIds = visible.map((event) => event.id);
+  if (freshCount < 0) { $('event-list').replaceChildren(...visible.map(eventRow)); return; }
+  const fresh = visible.slice(0, freshCount);
+  const rows = fresh.map(eventRow);
+  $('event-list').prepend(...rows);
+  while ($('event-list').children.length > visible.length) $('event-list').lastElementChild.remove();
+  if (!rows.length || rows.length > 5 || activeView !== 'overview') return;
+  attend('timeline', 1200, () => rows.flatMap((row, index) => [
+    play(row, [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 220, easing: EASE }),
+    play(row, [{ backgroundColor: EVENT_HIGHLIGHT[fresh[index].severity] || EVENT_HIGHLIGHT.info }, { backgroundColor: 'rgba(255,255,255,0)' }], { duration: 1200, easing: 'ease-in' }),
+  ]));
+}
+
+// One banner per observed safety transition; it remains until the safety state changes again.
+function renderSafetyBanner(sessionChanged) {
+  const current = state.safety?.state;
+  const previous = sessionChanged ? null : safetyState;
+  safetyState = current;
+  const banner = $('safety-banner');
+  if (sessionChanged) banner.hidden = true;
+  if (!previous || previous === current || !SAFETY_BANNERS[current]) return;
+  const restored = (state.events || []).find((event) => event.title === 'Normal operation restored');
+  const at = { REQUESTED: state.safety.requestedAtMs, DEGRADED: state.safety.activatedAtMs, NORMAL: restored?.timestampMs }[current];
+  banner.dataset.state = current.toLowerCase();
+  text('safety-banner-text', SAFETY_BANNERS[current]);
+  text('safety-banner-time', clock(at ?? state.timeMs));
+  banner.hidden = false;
+  if (activeView !== 'overview') return;
+  attend('safety', 250, () => [play(banner, [{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 250, easing: EASE })]);
 }
 
 function renderRules() {
@@ -344,6 +527,42 @@ function holdFrames(hold) {
   $('hold-frames').setAttribute('aria-pressed', String(hold));
 }
 
+function frameRow(frame, changed) {
+  const row = element('tr');
+  row.dataset.seq = String(frame.seq);
+  row.tabIndex = 0;
+  row.setAttribute('aria-label', `Frame ${frame.seq}, ${hex(frame.id)}, ${frame.decision}. View evidence.`);
+  row.append(element('td', '', clock(frame.timestampMs)), element('td', '', hex(frame.id)));
+  const signal = element('td');
+  const bytes = (frame.data || []).map((byte) => number(byte).toString(16).toUpperCase().padStart(2, '0'));
+  const marked = changed?.some(Boolean);
+  const payload = element('span', 'frame-payload', marked ? null : bytes.join(' ') || 'Empty payload');
+  if (marked) bytes.forEach((byte, index) => { if (index) payload.append(' '); payload.append(changed[index] ? element('span', 'byte-changed', byte) : byte); });
+  signal.append(element('span', 'frame-signal', frame.signal || 'Unknown signal'), payload);
+  const decisionCell = element('td');
+  decisionCell.append(element('span', `decision ${String(frame.decision).toLowerCase()}`, frame.decision));
+  const labelCell = element('td');
+  labelCell.append(element('span', `ground-truth ${frame.label === 'attack' ? 'attack' : ''}`, frame.label || 'unknown'));
+  row.append(signal, decisionCell, element('td', '', Math.round(number(frame.risk))), labelCell);
+  const select = () => { selectedFrame = frame; if (!heldFrames) holdFrames(true); renderFrameDetail(); renderFrames(true); };
+  row.addEventListener('click', select);
+  row.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(); } });
+  return row;
+}
+
+// Per new frame, mark the bytes that differ from the previous retained frame with the same CAN ID.
+function byteChanges(frames, fresh) {
+  const wanted = new Set(fresh.map((frame) => frame.seq));
+  const previous = new Map(), changes = new Map();
+  for (let index = frames.length - 1; index >= 0; index--) {
+    const data = frames[index].data || [];
+    const before = previous.get(frames[index].id);
+    if (before && wanted.has(frames[index].seq)) changes.set(frames[index].seq, data.map((byte, position) => byte !== before[position]));
+    previous.set(frames[index].id, data);
+  }
+  return changes;
+}
+
 function renderFrames(force = false) {
   const search = $('frame-search').value.trim().toLowerCase();
   const decision = $('decision-filter').value;
@@ -351,6 +570,7 @@ function renderFrames(force = false) {
   const frames = heldFrames || state?.frames || [];
   const signature = `${frames[0]?.seq}:${frames[0]?.timestampMs}:${frames.length}:${search}:${decision}:${label}`;
   if (!force && signature === lastFrameSignature) return;
+  if (lastFrameSignature === '') { frameRows = new Map(); lastFrameSeq = -1; }
   lastFrameSignature = signature;
   const matching = frames.filter((frame) => {
     if (decision !== 'all' && frame.decision !== decision) return false;
@@ -364,23 +584,25 @@ function renderFrames(force = false) {
   $('frames-empty').firstElementChild.textContent = frames.length ? 'No matching frames' : 'No frames to inspect';
   $('frames-empty').lastElementChild.textContent = frames.length ? 'Change the search or filters to inspect more traffic.' : 'Run the simulation, take a step, or import a CAN trace.';
   const focusedSequence = $('frames-body').contains(document.activeElement) ? document.activeElement.dataset.seq : null;
-  $('frames-body').replaceChildren(...visible.map((frame) => {
-    const row = element('tr', selectedFrame?.seq === frame.seq ? 'selected' : '');
-    row.dataset.seq = String(frame.seq);
-    row.tabIndex = 0;
-    row.setAttribute('aria-label', `Frame ${frame.seq}, ${hex(frame.id)}, ${frame.decision}. View evidence.`);
-    row.append(element('td', '', clock(frame.timestampMs)), element('td', '', hex(frame.id)));
-    const signal = element('td');
-    signal.append(element('span', 'frame-signal', frame.signal || 'Unknown signal'), element('span', 'frame-payload', (frame.data || []).map((byte) => number(byte).toString(16).toUpperCase().padStart(2, '0')).join(' ') || 'Empty payload'));
-    const decisionCell = element('td');
-    decisionCell.append(element('span', `decision ${String(frame.decision).toLowerCase()}`, frame.decision));
-    const labelCell = element('td');
-    labelCell.append(element('span', `ground-truth ${frame.label === 'attack' ? 'attack' : ''}`, frame.label || 'unknown'));
-    row.append(signal, decisionCell, element('td', '', Math.round(number(frame.risk))), labelCell);
-    const select = () => { selectedFrame = frame; if (!heldFrames) holdFrames(true); renderFrameDetail(); renderFrames(true); };
-    row.addEventListener('click', select);
-    row.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(); } });
+  // Only a live update may animate, and only a short readable burst. Filter changes and held views never do.
+  const fresh = !force && !heldFrames && lastFrameSeq >= 0 ? visible.filter((frame) => frame.seq > lastFrameSeq) : [];
+  const animate = fresh.length > 0 && fresh.length <= 5 && activeView === 'traffic';
+  const changes = animate ? byteChanges(frames, fresh) : new Map();
+  const rows = visible.map((frame) => {
+    // Rows are reused by sequence number so an in-progress highlight survives the next update.
+    if (!frameRows.has(frame.seq)) frameRows.set(frame.seq, frameRow(frame, changes.get(frame.seq)));
+    const row = frameRows.get(frame.seq);
+    row.className = selectedFrame?.seq === frame.seq ? 'selected' : '';
     return row;
+  });
+  $('frames-body').replaceChildren(...rows);
+  const shown = new Set(visible.map((frame) => frame.seq));
+  for (const seq of frameRows.keys()) if (!shown.has(seq)) frameRows.delete(seq);
+  if (!heldFrames && frames.length) lastFrameSeq = Math.max(lastFrameSeq, frames[0].seq);
+  if (animate) attend('inspector', 600, () => fresh.flatMap((frame) => {
+    const row = frameRows.get(frame.seq);
+    return [play(row, [{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: EASE }),
+      ...[...row.querySelectorAll('.byte-changed')].map((byte) => play(byte, [{ backgroundColor: '#ffdcbc' }, { backgroundColor: 'rgba(255,220,188,0)' }], { duration: 600, easing: 'ease-in' }))];
   }));
   if (focusedSequence) [...$('frames-body').children].find((row) => row.dataset.seq === focusedSequence)?.focus({ preventScroll: true });
 }
@@ -561,7 +783,8 @@ async function importTrace(event) {
   if (file.size > 2 * 1024 * 1024) { notify('This trace exceeds 2 MB. Choose a smaller trace with at most 20,000 frames.', true); event.target.value = ''; return; }
   importing = true;
   updateControls();
-  text('import-trigger', 'Importing…');
+  // Change only the label text node so the decorative arrow stays aria-hidden.
+  $('import-trigger').firstChild.textContent = 'Importing… ';
   try {
     const source = await file.text();
     const result = await api('/api/import', { format: $('import-format').value, text: source });
@@ -583,7 +806,7 @@ async function importTrace(event) {
   finally {
     importing = false;
     event.target.value = '';
-    text('import-trigger', 'Import trace ↑');
+    $('import-trigger').firstChild.textContent = 'Import trace ';
     updateControls();
   }
 }
@@ -621,6 +844,12 @@ for (const tab of document.querySelectorAll('[data-tab]')) {
   });
 }
 window.addEventListener('hashchange', () => setView(location.hash.slice(1)));
+const tabIndicator = element('span', 'tab-indicator');
+tabIndicator.setAttribute('aria-hidden', 'true');
+document.querySelector('.tabs').append(tabIndicator);
+document.querySelector('.tabs').dataset.indicator = 'slide';
+const tabGeometry = new ResizeObserver(() => placeTabIndicator(false));
+for (const node of [document.querySelector('.tabs'), ...document.querySelectorAll('[data-tab]')]) tabGeometry.observe(node);
 const mobileNavigation = window.matchMedia('(max-width:560px)');
 function updateNavOrientation() { document.querySelector('.tabs').setAttribute('aria-orientation', 'horizontal'); }
 mobileNavigation.addEventListener('change', updateNavOrientation);
@@ -648,8 +877,7 @@ for (const point of document.querySelectorAll('[data-signal]')) {
     updateSignalSelection();
   });
 }
-$('attack-form').addEventListener('submit', async (event) => {
-  event.preventDefault();
+async function injectAttack() {
   if (pendingControl || !connected) return;
   pendingControl = true;
   updateControls();
@@ -659,6 +887,96 @@ $('attack-form').addEventListener('submit', async (event) => {
     notify(result.running ? 'Attack injected. Watch the gateway response and decision evidence.' : 'Attack scheduled. Run or step the simulation to advance it.');
   } catch (error) { notify(error.message, true); }
   finally { pendingControl = false; updateControls(); }
+}
+
+// Injection needs intent: hold for 600 ms, or press once to arm and again to confirm (keyboard and assistive tech).
+function setInjectArmed(armed) {
+  const button = $('inject-attack');
+  clearTimeout(inject.armTimer);
+  button.toggleAttribute('data-armed', armed);
+  button.querySelector('.inject-label').textContent = armed ? 'Confirm injection' : 'Inject attack';
+  text('inject-status', armed ? 'Press Inject attack again within 5 seconds to confirm.' : '');
+  if (armed) inject.armTimer = setTimeout(() => setInjectArmed(false), INJECT_ARM_MS);
+}
+// Motion's primary-pointer rule: the main mouse button, or the first touch or pen contact.
+const isPrimaryPointer = (event) => (event.pointerType === 'mouse' ? event.button <= 0 : event.isPrimary !== false);
+function stopInjectRing() {
+  clearTimeout(inject.holdTimer);
+  inject.token++;
+  inject.ring.forEach((animation) => animation.cancel());
+  inject.ring = [];
+  $('inject-attack').removeAttribute('data-holding');
+}
+function endInjectPress() {
+  inject.pointerId = null;
+  window.removeEventListener('pointerup', onInjectRelease, true);
+  window.removeEventListener('pointercancel', onInjectCancel, true);
+  window.removeEventListener('pointermove', onInjectMove, true);
+}
+function endInjectHold() { endInjectPress(); stopInjectRing(); }
+function completeInjectHold() {
+  inject.held = true;
+  stopInjectRing();
+  setInjectArmed(false);
+  injectAttack();
+}
+function startInjectHold(event) {
+  const button = event.currentTarget;
+  if (!isPrimaryPointer(event) || button.disabled) return;
+  endInjectHold();
+  inject.held = false;
+  inject.pointerId = event.pointerId;
+  // As in Motion's press gesture, the end of the press is tracked on the window, so a release anywhere is seen.
+  window.addEventListener('pointerup', onInjectRelease, true);
+  window.addEventListener('pointercancel', onInjectCancel, true);
+  window.addEventListener('pointermove', onInjectMove, true);
+  button.setAttribute('data-holding', '');
+  const [right, left] = button.querySelectorAll('.hold-half i');
+  // Two clipped half rings rotate in turn, so progress is drawn with transforms only; linear because it is elapsed time.
+  inject.ring = [
+    play(right, [{ transform: 'rotate(-135deg)' }, { transform: 'rotate(45deg)', offset: 0.5 }, { transform: 'rotate(45deg)' }], { duration: INJECT_HOLD_MS, easing: 'linear', fill: 'forwards' }),
+    play(left, [{ transform: 'rotate(45deg)' }, { transform: 'rotate(45deg)', offset: 0.5 }, { transform: 'rotate(225deg)' }], { duration: INJECT_HOLD_MS, easing: 'linear', fill: 'forwards' }),
+  ].filter(Boolean);
+  // The ring is the clock: the attack fires when it visibly closes. Reduced motion draws no ring, so a timer stands in.
+  const token = inject.token;
+  const closed = inject.ring.length
+    ? Promise.all(inject.ring.map((animation) => animation.finished))
+    : new Promise((resolve) => { inject.holdTimer = setTimeout(resolve, INJECT_HOLD_MS); });
+  closed.then(() => { if (token === inject.token) completeInjectHold(); }, () => {});
+}
+function onInjectRelease(event) {
+  if (event.pointerId !== inject.pointerId) return;
+  endInjectPress();
+  if (!inject.held) { stopInjectRing(); return; }
+  // The release that ends a completed hold must not also arm the button; touch can deliver that click late.
+  clearTimeout(inject.releaseTimer);
+  inject.releaseTimer = setTimeout(() => { inject.held = false; }, 600);
+}
+function onInjectCancel(event) { if (event.pointerId === inject.pointerId) endInjectHold(); }
+// Small drift, such as a finger on a phone, keeps the hold; moving clearly off the button abandons it.
+function onInjectMove(event) {
+  if (event.pointerId !== inject.pointerId || inject.held) return;
+  const box = $('inject-attack').getBoundingClientRect();
+  if (event.clientX < box.left - INJECT_SLOP_PX || event.clientX > box.right + INJECT_SLOP_PX || event.clientY < box.top - INJECT_SLOP_PX || event.clientY > box.bottom + INJECT_SLOP_PX) endInjectHold();
+}
+const injectButton = $('inject-attack');
+injectButton.addEventListener('pointerdown', startInjectHold);
+injectButton.addEventListener('click', (event) => { if (inject.held) { inject.held = false; event.preventDefault(); } });
+injectButton.addEventListener('keydown', (event) => {
+  inject.held = false;
+  // A held key auto-repeats; only a fresh press may arm or confirm, as in Motion's keyboard press.
+  if (event.repeat && (event.key === 'Enter' || event.key === ' ')) event.preventDefault();
+  if (event.key === 'Escape') setInjectArmed(false);
+});
+injectButton.addEventListener('contextmenu', (event) => event.preventDefault());
+injectButton.addEventListener('blur', () => setInjectArmed(false));
+$('attack-form').addEventListener('change', () => setInjectArmed(false));
+$('attack-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (pendingControl || !connected) return;
+  if (!injectButton.hasAttribute('data-armed')) { setInjectArmed(true); return; }
+  setInjectArmed(false);
+  injectAttack();
 });
 $('dismiss-notification').addEventListener('click', () => { $('notification').hidden = true; });
 $('reconnect').addEventListener('click', async () => { text('reconnect', 'Reconnecting…'); await refreshState(); connectStream(); text('reconnect', 'Reconnect'); });

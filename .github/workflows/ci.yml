@@ -1,23 +1,98 @@
-name: Verify Sentinel ECU
-on: [push, pull_request]
+name: CI and CD
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sentinel-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   simulation:
+    name: Simulation (${{ matrix.os }}, Node ${{ matrix.node }})
+    timeout-minutes: 10
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         node: [22, 24]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - run: npm test
-      - run: npm run validate
-      - run: npm run check
-      - run: npm run build
+      - run: npm run release:check
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: validation-${{ matrix.os }}-node${{ matrix.node }}
-          path: artifacts/*.json
+          path: artifacts/validation-report.json
+          retention-days: 14
+          if-no-files-found: error
+  browser:
+    name: Browser workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-evidence
+          path: artifacts/browser/
+          retention-days: 14
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tested-site-${{ github.sha }}
+          path: dist/
+          retention-days: 14
+          if-no-files-found: error
+  deploy:
+    name: Publish and verify Cloudflare
+    needs: [simulation, browser]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Promote only the current, tested main commit
+        id: promote
+        shell: bash
+        run: |
+          git fetch origin main production
+          if [ "$(git rev-parse origin/main)" != "$GITHUB_SHA" ]; then
+            echo "A newer main commit exists; this run will not deploy."
+            exit 0
+          fi
+          git push origin "$GITHUB_SHA:refs/heads/production"
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
+      - name: Wait for this exact release and check public assets
+        if: steps.promote.outputs.deployed == 'true'
+        env:
+          DEPLOYMENT_URL: https://sentinel-ecu.pages.dev
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: npm run verify:deployment

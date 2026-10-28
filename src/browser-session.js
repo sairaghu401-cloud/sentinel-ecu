@@ -1,3 +1,4 @@
+import { observePresentation, presentationSnapshot } from './presentation-observer.js';
 import { Simulation, SCENARIOS, SIGNALS, INTENSITY_PROFILES, describeAttackIntensity } from './simulation.js';
 import { parseTrace, framesToCsv } from './datasets.js';
 
@@ -12,13 +13,13 @@ export class BrowserSession {
   reset(seed = 42, profile = 'urban') {
     integer(seed, 0, 0xffffffff, 'Seed');
     if (!['urban', 'highway'].includes(profile)) throw new RangeError('Profile must be urban or highway.');
-    this.sim = new Simulation({ seed, profile });
+    this.sim = observePresentation(new Simulation({ seed, profile }));
     this.session = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), source: 'synthetic' };
     this.provenance = {};
   }
   snapshot() {
     const state = this.sim.snapshot();
-    return { ...state, frames: state.frames.slice(0, 150), events: state.events.slice(0, 60),
+    return { ...state, presentation: presentationSnapshot(this.sim), frames: state.frames.slice(0, 150), events: state.events.slice(0, 60),
       sessionId: this.session.id, source: this.session.source, storage: { enabled: false, path: null, error: null } };
   }
   tick() { if (this.sim.running) this.sim.advance(Math.round(50 * this.sim.speed)); }
@@ -52,7 +53,7 @@ export class BrowserSession {
       case '/api/attack': this.requireSynthetic(); this.sim.injectAttack(input); return this.snapshot();
       case '/api/import': {
         const parsed = parseTrace(input.text, input.format);
-        const next = new Simulation({ seed: 42, profile: 'urban' });
+        const next = observePresentation(new Simulation({ seed: 42, profile: 'urban' }));
         for (const frame of parsed.frames) next.ingest(frame);
         next.advance(500); next.setRunning(false);
         this.sim = next;

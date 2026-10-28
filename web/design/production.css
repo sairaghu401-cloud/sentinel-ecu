@@ -1,0 +1,201 @@
+.ref-style-1{position:absolute}
+.ref-style-2{color:var(--orange-ink)}
+.ref-style-3{font-size:12px}
+.ref-style-4{font-weight:600;margin-top:6px}
+.ref-style-5{width:100%}
+.ref-style-6{margin-bottom:12px}
+.ref-style-7{color:var(--ok-ink)}
+.ref-style-8{color:var(--gate-ink)}
+.ref-style-9{color:var(--ok)}
+.ref-style-10{color:var(--crit)}
+.ref-style-11{color:var(--ink-3)}
+.ref-style-12{color:var(--orange-ink);display:inline;font-size:12.5px;letter-spacing:0;text-transform:none;font-family:var(--f-sans);font-weight:600}
+.ref-style-13{color:var(--ink-3);font-size:11.5px}
+.ref-style-14{margin:6px 0}
+.ref-style-15{padding:16px 4px;color:var(--ink-3);font-size:13px}
+.ref-style-16{display:block;font-size:12px;color:var(--ink-3);margin-top:4px}
+.workspace-tools { display:flex; flex-direction:column; gap:12px; margin-top:auto; }
+.workspace-tools a { font-size:13px; text-decoration:underline; text-underline-offset:3px; }
+.workspace-tools .btn { text-align:left; justify-content:flex-start; white-space:normal; }
+.connection-strip { padding:10px 24px; background:var(--orange-wash); color:var(--ink); border-bottom:1px solid var(--line); font-size:13px; }
+#session-tools { width:min(640px,calc(100vw - 32px)); max-height:calc(100dvh - 40px); margin:auto; padding:24px; border:1px solid var(--line); background:var(--paper); color:var(--ink); overflow:auto; }
+#session-tools::backdrop { background:rgb(15 17 14 / .55); }
+.tools-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:12px; }
+.tools-heading h2 { font-size:24px; }
+#session-tools section { border-top:1px solid var(--line); padding-top:20px; margin-top:20px; }
+#session-tools h3 { margin-bottom:8px; }
+#session-tools .note { margin:8px 0 12px; }
+#session-tools input[type=file] { max-width:100%; font:inherit; min-height:44px; }
+.tool-actions { display:flex; gap:12px; flex-wrap:wrap; margin:12px 0; }
+.tool-actions a { text-decoration:underline; font-size:13px; }
+#tools-message { min-height:24px; margin:16px 0; color:var(--ink); font-size:14px; }
+#validation-results { margin-top:16px; font-size:13px; }
+#validation-results li { padding:5px 0; }
+.no-script { padding:24px; background:var(--paper); color:var(--ink); }
+.no-script a { text-decoration:underline; }
+@media (min-width:1101px) and (max-width:1280px) { .appbar .sim-badge { display:none; } }
+@media (min-width:1101px) and (max-width:1600px) { .appbar .right .sample-tag, .appbar .sb-long { display:none; } }
+@media (max-width:1100px) {
+  .appbar .wordmark { font-size:11px; gap:5px; }
+  .appbar .wordmark svg { width:17px; }
+  .appbar { gap:6px; padding-inline:10px; }
+  .appbar .ctl-btn { padding-inline:8px; }
+  .workspace-tools { margin-top:12px; }
+  .connection-strip { padding:10px 12px; }
+  #session-tools { padding:18px; }
+}
+@media (max-width:360px) {
+  .appbar .wordmark { font-size:10px; }
+  .appbar .wm-ecu { display:none; }
+  .appbar .ctl-btn { font-size:13px; padding-inline:6px; gap:4px; }
+  .appbar .sim-controls { gap:6px; }
+  .topbar { padding-inline:12px; gap:8px; }
+  .topbar .wordmark { font-size:12px; gap:5px; }
+  .topbar .wordmark svg { width:16px; }
+  .topnav a { font-size:12px; }
+  .topbar .motion-toggle { padding-inline:8px; font-size:9px; }
+}
+
+/* Continuous story and a canvas-first simulator. All model controls retain
+   their existing nodes and handlers; drawers only change their presentation. */
+html { scroll-padding-top:56px; }
+body { background:var(--paper); color:var(--ink); }
+.js .view, .js .view.is-active { display:grid; }
+.js .view.view-bench { display:flex; }
+.view { scroll-margin-top:56px; }
+#intro { background-color:var(--night); color:var(--night-ink); }
+#architecture, #workbench { background:var(--paper); color:var(--ink); }
+.topbar { position:fixed; height:56px; padding:0 28px; background:var(--paper); color:var(--ink); border-bottom:1px solid var(--line); }
+.topbar[data-tone="night"] { background:var(--night); color:var(--night-ink); border-color:#35332e; }
+.topnav a { display:flex !important; }
+.topbar .motion-toggle { display:none; }
+.static-stage { pointer-events:none; }
+.has-live-stage > .static-stage { display:none; }
+#intro .net .shelf, #intro .pk-tag { opacity:0; }
+#intro .overlay { display:none; }
+.view-intro, .view-arch { min-height:100svh; }
+#workbench { height:calc(100dvh - 56px); min-height:620px; position:relative; }
+.appbar { height:56px; min-height:56px; position:static; padding:0 24px; flex:none; gap:12px; }
+.appbar .wordmark, .appbar .sim-badge, .appbar .divider, .appbar .sample-tag { display:none; }
+.appbar::before { content:'SIMULATION / LIVE MODEL'; font:11px var(--f-mono); letter-spacing:.06em; color:var(--ink-3); margin-right:auto; }
+.appbar .right { margin-left:0; }
+.bench-grid { display:block; flex:1; min-height:0; padding:0; }
+.stage-area { height:100%; padding:12px 28px 10px; display:grid; grid-template-columns:minmax(0,1fr) 280px; grid-template-rows:auto minmax(0,1fr) auto auto; column-gap:24px; position:relative; top:auto; border:0; }
+.stage-head { grid-column:1/-1; min-height:48px; gap:20px; }
+.stage-head .h3 { display:block; }
+.stage-head .legend { display:flex; }
+.stage-area .io-pair { position:static; flex-direction:row; margin-left:auto; width:auto; }
+.stage-area .io { width:auto; min-width:170px; padding:5px 10px; }
+.bench-stage-slot { grid-column:1; grid-row:2; height:auto; min-height:0; margin:0; }
+.bench-stage-slot .stage-box { inset:0; transform:none; width:100%; height:100%; max-height:none; aspect-ratio:auto; }
+#callout-dock { display:block; grid-column:2; grid-row:2; align-self:center; min-width:0; }
+#callout-dock .callout { position:static; width:100%; }
+#callout-dock .arrive { font-size:11px; padding:8px; }
+.stage-foot { grid-column:1/-1; padding-top:8px; border-top:1px solid var(--line); gap:6px; }
+.stage-caption { grid-column:1/-1; display:block; min-height:38px; padding-top:4px; max-width:none; }
+.net .leader { display:none !important; }
+.workspace-dock { display:flex; align-items:center; justify-content:center; gap:6px; flex:none; min-height:64px; padding:8px 16px; border-top:1px solid var(--line); background:var(--paper); }
+.workspace-dock button { display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 24px; min-height:42px; background:var(--surface); color:var(--ink); border:1px solid var(--line-strong); border-radius:3px; font-size:13px; cursor:pointer; }
+.workspace-dock button:first-child { color:var(--orange-ink); border-color:var(--orange); }
+.workspace-dock button:hover { background:var(--paper-2); }
+.workspace-dock svg { width:18px; height:18px; }
+.tabbar { display:none !important; }
+#workspace-panel { position:fixed; inset:0 0 0 auto; width:min(480px,100vw); height:100dvh; max-height:100dvh; max-width:100vw; margin:0; padding:0; border:0; border-left:1px solid var(--line-strong); background:var(--paper); color:var(--ink); }
+#workspace-panel[open] { display:flex; flex-direction:column; }
+#workspace-panel::backdrop { background:rgb(20 20 17 / .22); }
+.drawer-heading { padding:18px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--line); flex:none; }
+.drawer-heading h2 { font-size:19px; }
+#workspace-panel-body { overflow:auto; min-height:0; flex:1; overscroll-behavior:contain; }
+#workspace-panel-body > [hidden] { display:none !important; }
+#workspace-panel .signals { border:0; overflow:visible; padding:24px; gap:24px; }
+#workspace-panel .side { display:flex; border:0; }
+#workspace-panel .tabs { display:flex; position:sticky; top:0; background:var(--paper); z-index:3; }
+#workspace-panel .tabpanel { overflow:visible; padding:20px 24px; }
+#workspace-panel .attack-cta { position:static; margin:12px 0 0; padding:16px 0 0; }
+#workspace-panel .rails { padding:24px; border:0; }
+#workspace-panel .rails-h { flex-wrap:wrap; gap:8px; }
+#workspace-panel .rail { grid-template-columns:1fr; gap:8px; padding:18px 0; }
+#workspace-panel .rail-track { display:none; }
+#workspace-panel .rail-state { display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+#workspace-panel .rail-detail { display:block; overflow:visible; }
+#workspace-panel .m-sim { display:flex; padding:24px; }
+#workspace-panel .readout .v { font-size:25px; }
+.drawer-footer { flex:none; padding:14px 24px; border-top:1px solid var(--line); }
+.drawer-footer .btn { width:100%; }
+@media (max-width:1100px) {
+  .topbar { padding:0 16px; }
+  .topbar .wordmark { font-size:12px; }
+  .topnav { gap:0; }
+  .topnav a { padding:0 10px; font-size:12px; }
+  #workbench { min-height:660px; }
+  .stage-area { grid-template-columns:minmax(0,1fr) 240px; column-gap:12px; padding:10px 16px; }
+  .stage-head { flex-wrap:wrap; gap:8px; }
+  .stage-head .legend { font-size:10px; gap:10px; }
+  .stage-area .io-pair { margin-left:auto; }
+  .stage-area .io { min-width:145px; }
+  .stage-caption { font-size:12px; }
+  .workspace-dock button { padding:10px 18px; }
+}
+@media (max-width:700px) {
+  .topbar { padding:0 10px; gap:8px; }
+  .topbar .wordmark { font-size:10px; gap:5px; }
+  .topbar .wordmark svg { width:14px; }
+  .topbar .wm-ecu { display:none; }
+  .topnav a { padding:0 6px; font-size:11px; }
+  .appbar { padding:0 12px; gap:8px; height:48px; min-height:48px; }
+  .appbar::before { content:'SIMULATOR'; font-size:10px; }
+  .appbar .ctl-btn { min-height:36px; font-size:12px; padding:0 8px; }
+  .stage-area { display:flex; flex-direction:column; gap:6px; padding:8px 12px; }
+  .stage-head .h3 { font-size:12px; }
+  .stage-head .legend { display:none; }
+  .stage-area .io-pair { width:100%; margin:0; gap:6px; }
+  .stage-area .io { flex:1; min-width:0; min-height:50px; padding:5px 8px; }
+  .bench-stage-slot { flex:1; min-height:190px; width:100%; }
+  #callout-dock { display:block; width:100%; flex:none; }
+  #callout-dock .callout { padding:8px 10px; }
+  #callout-dock .callout dl { font-size:12px; }
+  #callout-dock .rule { display:none; }
+  #callout-dock .arrive { margin-top:4px; padding:4px 8px; }
+  .stage-foot { flex:none; }
+  .sampling-note, .stage-caption { display:none; }
+  .accounting { font-size:10px; }
+  .workspace-dock { gap:0; padding:4px 6px max(4px,env(safe-area-inset-bottom)); min-height:58px; justify-content:space-around; }
+  .workspace-dock button { flex:1; flex-direction:column; gap:3px; padding:5px 2px; font-size:10px; border:0; background:transparent; }
+  .workspace-dock svg { width:17px; height:17px; }
+  #workspace-panel .tabpanel { padding:16px; }
+  .drawer-heading, .drawer-footer { padding:14px 16px; }
+}
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+html { scroll-padding-top:0; }
+.topnav a[aria-current="location"] { text-decoration:underline; text-underline-offset:6px; text-decoration-thickness:1px; }
+@media (max-width:1100px) {
+  .view-intro, .view-arch { grid-template-columns:minmax(0,1fr); }
+  .intro-copy, .arch-copy, .arch-stage-wrap { min-width:0; }
+  .intro-stage-slot { width:100%; margin:0; min-width:0; }
+}
+.drawer-footer .btn { background:var(--surface); border-color:var(--line-strong); color:var(--ink); }
+@media (max-width:1100px) { .display { font-size:clamp(36px,12vw,58px); } }
+
+/* Keep protected-ECU values beside the journey on roomy screens. Move the
+   same live nodes into Vehicle on phones, so there is one source of truth. */
+.vehicle-live { padding:14px 12px 8px; border:1px solid var(--line); border-radius:3px; background:var(--surface); margin-bottom:16px; }
+.vehicle-live > p { font-size:11px; color:var(--ink-3); margin:4px 0 12px; }
+.vehicle-live .h3 { font-size:12px; }
+.vehicle-live .readout { padding:10px 0; min-width:0; }
+.vehicle-live .readout:nth-child(odd) { padding-right:8px; }
+.vehicle-live .readout:nth-child(even) { padding-left:8px; }
+.vehicle-live .readout dt { font-size:9px; letter-spacing:.02em; }
+.vehicle-live .readout dt .cid { display:none; }
+.vehicle-live .readout .v { min-width:0; text-align:left; font-size:22px; }
+.vehicle-live .readout .u { font-size:10px; }
+.vehicle-live .readout dd { flex-wrap:wrap; gap:3px; }
+.vehicle-live .readout .tgt { font-size:8px; }
+.vehicle-live .readout:nth-last-child(-n+2) { border-bottom:0; }
+.pi-explainer { margin-top:18px; border-top:1px solid var(--line); padding-top:16px; font-size:13px; }
+.pi-explainer summary { cursor:pointer; font-weight:600; }
+.pi-explainer p { margin-top:12px; color:var(--ink-2); line-height:1.55; }
+@media (min-width:701px) {
+  #callout-dock { align-self:center; max-height:100%; overflow-y:auto; padding-right:2px; }
+  .workspace-dock button[data-panel="signals"] { display:none; }
+}
+@media (max-width:700px) { .vehicle-live { display:none; } }

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f9f9f6">
+  <title>Sentinel ECU — CAN Bus Security Simulation</title>
+  <meta name="description" content="Explore vehicle cybersecurity in your browser. Simulate CAN traffic, inject six controlled attack scenarios, and inspect gateway, anomaly detection and safety decisions.">
+  <link rel="canonical" href="https://sentinel-ecu.pages.dev/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Sentinel ECU — Vehicle security. Made visible.">
+  <meta property="og:description" content="A CAN security laboratory in your browser. Six attack scenarios. Every decision open to inspection.">
+  <meta property="og:url" content="https://sentinel-ecu.pages.dev/">
+  <meta property="og:image" content="https://sentinel-ecu.pages.dev/social-preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/public.css">
+  <script type="module" src="/public.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header"><div class="nav wrap">
+    <a class="brand" href="/" aria-label="Sentinel ECU home"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M6 4h24v8H14v4h16v16H6v-8h16v-4H6Z"/></svg><span><strong>SENTINEL</strong><small>VEHICLE SECURITY</small></span></a>
+    <nav class="nav-links" aria-label="Main navigation"><a href="/how-it-works/">The system</a><a href="/attack-scenarios/">Attack scenarios</a><a href="/validation/">Validation</a></nav>
+    <a class="nav-launch" href="/simulator/">Open simulator <span class="arrow" aria-hidden="true">↗</span></a>
+  </div></header>
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <p class="eyebrow">SENTINEL ECU / A SOFTWARE-IN-THE-LOOP LABORATORY</p>
+      <div class="hero-top"><h1 id="hero-title">Vehicle security.<br><span>Made visible.</span></h1><div class="hero-copy"><p>A CAN security lab, in your browser. Inject controlled attacks. Follow the evidence. Understand the response.</p><div class="actions"><a class="button" href="/simulator/">Enter the laboratory <span aria-hidden="true">↗</span></a><a class="text-link" href="#system">Explore the system <span class="arrow" aria-hidden="true">↓</span></a></div></div></div>
+      <div class="hero-visual">
+        <div class="visual-meta"><span>FIG. 01 / THE PROTECTED VEHICLE NETWORK</span><span>ARCHITECTURE ILLUSTRATION · NOT LIVE TELEMETRY</span></div>
+        <svg viewBox="0 0 1200 420" role="img" aria-labelledby="vehicle-title vehicle-description" width="1200" height="420">
+          <title id="vehicle-title">An inspectable vehicle network</title><desc id="vehicle-description">A silver vehicle schematic connects brake, steering, battery and powertrain signals to a Sentinel gateway. Orange lines show the illustrated network path.</desc>
+          <defs><pattern id="drawing-grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#dce2d9" stroke-width=".5"/></pattern><linearGradient id="body-metal" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fdfefa"/><stop offset=".42" stop-color="#e6ebe4"/><stop offset="1" stop-color="#c6cfc6"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a9bcc0"/><stop offset="1" stop-color="#d5e0dc"/></linearGradient></defs>
+          <rect width="1200" height="420" fill="url(#drawing-grid)"/>
+          <path d="M130 212H1070M600 65V360" stroke="#c2ccc0" stroke-width=".8" stroke-dasharray="4 6"/>
+          <path d="M265 112H935M265 308H935" stroke="#bdc8ba" stroke-width=".8"/>
+          <path d="M265 107V117M935 107V117M265 303V313M935 303V313" stroke="#bdc8ba"/>
+          <g fill="#39443e" stroke="#7a887d"><rect x="360" y="119" width="85" height="30" rx="8"/><rect x="360" y="275" width="85" height="30" rx="8"/><rect x="782" y="119" width="85" height="30" rx="8"/><rect x="782" y="275" width="85" height="30" rx="8"/></g>
+          <ellipse cx="605" cy="220" rx="333" ry="83" fill="#7c8d78" opacity=".08"/>
+          <path d="M309 144Q275 146 273 183V243Q275 280 314 281H763Q857 282 914 255Q949 239 949 211Q949 181 914 165Q858 140 763 142Z" fill="url(#body-metal)" stroke="#8e9e8b" stroke-width="1.8"/>
+          <path d="M324 156Q291 156 291 185V240Q292 267 324 267H759Q842 268 899 245Q929 234 930 211Q929 188 899 176Q845 154 760 156Z" fill="none" stroke="#b7c3b0"/>
+          <path d="M470 166L510 150H704L759 172V250L704 273H510L470 254Z" fill="#bdccc0" stroke="#8f9e8e"/>
+          <path d="M487 178L514 162L532 181V241L513 261L487 246Z" fill="url(#glass)" stroke="#8eaaa6"/>
+          <path d="M690 164L741 181V242L690 260L671 242V182Z" fill="url(#glass)" stroke="#8eaaa6"/>
+          <rect x="541" y="164" width="121" height="96" rx="25" fill="#e5ebe1" stroke="#a6b49e"/>
+          <path d="M557 175H645M557 249H645M563 166V259M643 166V259M479 212H535M667 212H750" fill="none" stroke="#b7c4b0"/>
+          <path d="M322 171V252M346 168V254M775 165L853 184M775 259L853 241" fill="none" stroke="#adbaa8"/>
+          <path d="M285 179V197M285 227V246" stroke="#b76c55" stroke-width="4"/><path d="M919 181L926 198M919 241L926 225" stroke="#fffef0" stroke-width="5"/>
+          <path class="hero-route" d="M380 94V212H820V94M600 212V340M820 212V329M402 212V329"/>
+          <g fill="#b54b20" stroke="#f9f9f6" stroke-width="3"><circle cx="380" cy="212" r="6"/><circle cx="820" cy="212" r="6"/><circle cx="600" cy="212" r="6"/><circle cx="402" cy="212" r="5"/></g>
+          <g class="hero-module"><rect x="304" y="65" width="151" height="45" rx="2"/><rect x="743" y="65" width="152" height="45" rx="2"/><rect x="325" y="320" width="155" height="45" rx="2"/><rect x="744" y="320" width="154" height="45" rx="2"/></g>
+          <g class="hero-ink"><text x="318" y="83">01 / BRAKE</text><text x="318" y="98" fill="#222a2c">0x120 · 20 ms</text><text x="757" y="83">02 / STEERING</text><text x="757" y="98" fill="#222a2c">0x130 · 20 ms</text><text x="339" y="338">03 / BATTERY</text><text x="339" y="353" fill="#222a2c">0x300 · 100 ms</text><text x="758" y="338">04 / POWERTRAIN</text><text x="758" y="353" fill="#222a2c">0x200 · 20 ms</text><text x="200" y="215">REAR</text><text x="975" y="215">FRONT</text></g>
+          <g><rect x="574" y="323" width="52" height="43" fill="#b54b20" rx="2"/><path d="M587 334H612V342H592V349H612" stroke="#fff4e5" fill="none" stroke-width="2"/><text class="hero-ink" x="600" y="384" text-anchor="middle">SENTINEL GATEWAY</text></g>
+          <rect class="hero-scan" x="300" y="145" width="2" height="135" fill="#b54b20"/>
+        </svg>
+        <div class="visual-foot"><span>CLASSICAL CAN / TWO 500 kbit/s SEGMENTS</span><strong>BUILT TO BE INSPECTED ↗</strong></div>
+      </div>
+      <div class="spec-strip"><div><strong>06</strong><small>ATTACK SCENARIOS</small></div><div><strong>05</strong><small>INTENSITY LEVELS</small></div><div><strong>02</strong><small>CAN SEGMENTS</small></div><div><strong>One seed.</strong><small>REPEATABLE EXPERIMENTS</small></div></div>
+    </section>
+    <section class="system-section wrap" id="system" aria-labelledby="system-title">
+      <div class="section-heading" data-reveal><div><p class="eyebrow">01 / UNDER THE SURFACE</p><h2 id="system-title">Follow the signal.<br>Understand the decision.</h2></div><p>Traffic, detection and safety have different jobs. Sentinel makes their boundaries visible, from an arriving frame to the protected vehicle model.</p></div>
+      <div class="story-layout">
+        <div class="story-board" data-stage="1"><div class="board-top"><span>SENTINEL / SYSTEM MAP</span><span>ILLUSTRATED FLOW</span></div>
+          <svg class="board-graphic" viewBox="0 0 500 390" width="500" height="390" role="img" aria-labelledby="architecture-title architecture-desc"><title id="architecture-title">Three independent responsibilities</title><desc id="architecture-desc">ESP32 traffic passes through CAN A to the STM32 gateway, then CAN B to the protected ECU. The Raspberry Pi provides delayed advisory analysis. A separate safety task owns degradation and recovery.</desc>
+            <path class="board-line" d="M100 130V195H200M300 195H408V270M250 165V80H370M250 225V315H330"/>
+            <path class="board-active-line line-observe" d="M100 130V195H200M300 195H408V270"/><path class="board-active-line line-detect" d="M250 165V80H370"/><path class="board-active-line line-protect" d="M250 225V315H330"/>
+            <rect class="board-node" x="35" y="70" width="130" height="60" rx="3"/><text class="board-small" x="51" y="90">TRAFFIC SOURCE</text><text class="board-label" x="51" y="111">ESP32 / modeled</text>
+            <rect class="board-node node-primary" x="200" y="165" width="100" height="60" rx="3"/><text class="board-small" x="215" y="187">GATEWAY</text><text class="board-label" x="215" y="208">STM32</text>
+            <rect class="board-node node-analyst" x="340" y="50" width="130" height="60" rx="3"/><text class="board-small" x="356" y="70">ANALYST</text><text class="board-label" x="356" y="91">Raspberry Pi</text>
+            <rect class="board-node node-safety" x="330" y="270" width="140" height="75" rx="3"/><text class="board-small" x="346" y="292">PROTECTED VEHICLE</text><text class="board-label" x="346" y="313">ECU + safety task</text><text class="board-small" x="346" y="332">Independent authority</text>
+            <text class="board-small" x="122" y="182">CAN A</text><text class="board-small" x="340" y="182">CAN B</text><text class="board-small" x="258" y="134">Advisory</text><text class="board-small" x="258" y="290">Request</text>
+            <text class="board-small" x="36" y="366">MODEL BOUNDARIES / NO PHYSICAL ACTUATORS</text>
+          </svg><div class="board-state"><strong data-stage-label>Traffic enters CAN A</strong><span>SCROLL TO EXPLORE ↓</span></div></div>
+        <div class="story-steps">
+          <article class="story-step is-active"><span class="step-index">01 — OBSERVE</span><h3>A network with real constraints.</h3><p>Six modeled signals share a finite CAN bus. Arbitration, serialization and bounded queues determine what arrives, what waits and what gets dropped.</p><a href="/how-it-works/#traffic">Explore the traffic model ↗</a></article>
+          <article class="story-step"><span class="step-index">02 — DETECT</span><h3>Evidence before a conclusion.</h3><p>The gateway checks frame structure, timing and plausibility. A separately trained Pi analyst looks for payload anomalies. Every decision has a reason to inspect.</p><a href="/how-it-works/#detection">Meet the two detectors ↗</a></article>
+          <article class="story-step"><span class="step-index">03 — PROTECT</span><h3>Safety has its own authority.</h3><p>Sustained critical-signal evidence can request degradation. An independent safety task acknowledges it, latches the state and permits explicit recovery after a quiet interval.</p><a href="/how-it-works/#safety">Understand the safety boundary ↗</a></article>
+        </div>
+      </div>
+    </section>
+    <section class="scenario-section" aria-labelledby="scenario-title"><div class="wrap">
+      <div class="section-heading" data-reveal><div><p class="eyebrow">02 / CONTROLLED ADVERSITY</p><h2 id="scenario-title">Six ways to challenge<br>the network.</h2></div><p>Choose the mechanism, target and intensity. Then compare what was injected with what the detectors actually observed.</p></div>
+      <div class="scenario-list">
+        <a class="scenario-row" href="/attack-scenarios/#spoofing"><span class="number">01</span><h3>ECU spoofing</h3><p>Impersonate a trusted signal source.</p><span class="row-arrow" aria-hidden="true">↗</span></a>
+        <a class="scenario-row" href="/attack-scenarios/#replay"><span class="number">02</span><h3>Captured frame replay</h3><p>Challenge freshness with a repeated frame.</p><span class="row-arrow" aria-hidden="true">↗</span></a>
+        <a class="scenario-row" href="/attack-scenarios/#flooding"><span class="number">03</span><h3>CAN bus flooding</h3><p>Increase pressure on a finite bus.</p><span class="row-arrow" aria-hidden="true">↗</span></a>
+        <a class="scenario-row" href="/attack-scenarios/#fuzzing"><span class="number">04</span><h3>Protocol fuzzing</h3><p>Test unexpected identifiers and lengths.</p><span class="row-arrow" aria-hidden="true">↗</span></a>
+        <a class="scenario-row" href="/attack-scenarios/#payload"><span class="number">05</span><h3>Payload manipulation</h3><p>Change values while retaining valid timing.</p><span class="row-arrow" aria-hidden="true">↗</span></a>
+        <a class="scenario-row" href="/attack-scenarios/#stealth"><span class="number">06</span><h3>Gradual payload drift</h3><p>Move slowly enough to test the analyst.</p><span class="row-arrow" aria-hidden="true">↗</span></a>
+      </div>
+    </div></section>
+    <section class="quickstart wrap" id="quickstart" aria-labelledby="guide-title"><div class="section-heading" data-reveal><div><p class="eyebrow">03 / YOUR FIRST EXPERIMENT</p><h2 id="guide-title">Start with a question.</h2></div><p>What changes at low intensity? Does the Pi agree with the gateway? Use the laboratory to investigate, one decision at a time.</p></div>
+      <div class="guide-layout"><div class="guide-controls" aria-label="Control guide steps">
+        <button class="guide-choice" data-guide-step="1" aria-pressed="true" aria-controls="guide-preview"><span>01</span><span><strong>Choose a scenario</strong><small>Set the attack family and target signal.</small></span><span aria-hidden="true">↗</span></button>
+        <button class="guide-choice" data-guide-step="2" aria-pressed="false" aria-controls="guide-preview"><span>02</span><span><strong>Set the intensity</strong><small>Start low, then compare stronger conditions.</small></span><span aria-hidden="true">↗</span></button>
+        <button class="guide-choice" data-guide-step="3" aria-pressed="false" aria-controls="guide-preview"><span>03</span><span><strong>Inspect the evidence</strong><small>Read what each component actually detected.</small></span><span aria-hidden="true">↗</span></button>
+        <a class="text-link" href="/simulator/#guide">Open the full lab guide <span class="arrow" aria-hidden="true">→</span></a>
+      </div><div class="guide-preview" id="guide-preview" data-guide="1"><div class="preview-heading"><span><i></i>CONTROL GUIDE</span><span>ILLUSTRATION / NO ACTIVE RUN</span></div>
+        <p data-guide-description aria-live="polite">Choose the attack family and the signal you want to investigate. The laboratory offers six controlled scenarios.</p>
+        <div class="demo-field demo-scenario"><span>Attack scenario</span><div class="demo-value">CAN bus flooding <small>Battery · 0x300</small></div></div>
+        <div class="demo-field demo-intensity"><span>Intensity</span><div class="demo-value">01 / Low <small>100 extra frames/s</small></div><div class="demo-levels" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="demo-field demo-assessment"><span>What to inspect</span><div class="demo-evidence"><span>Gateway<strong>Rate &amp; rule evidence</strong></span><span>Pi analyst<strong>Payload anomalies</strong></span></div></div>
+      </div></div>
+    </section>
+    <section class="proof-section"><div class="wrap proof-layout"><div><p class="eyebrow">04 / OPEN TO SCRUTINY</p><h2>Repeat it.<br>Inspect it. Explain it.</h2><p>Seeded traffic makes experiments repeatable. Export the evidence, replay a trace, or run the built-in validation suite.</p><a class="text-link" href="/validation/">Read the validation method <span class="arrow" aria-hidden="true">↗</span></a></div><div class="proof-details"><div class="proof-item"><strong>12 SCENARIOS</strong><p>A synthetic acceptance suite checks clean traffic, attacks, analyst loss and safety recovery.</p></div><div class="proof-item"><strong>CSV + JSON</strong><p>Export frame decisions and session evidence for your own analysis.</p></div><div class="proof-item"><strong>LOCAL TO YOUR TAB</strong><p>The hosted laboratory runs its model in a browser worker. Each tab has an independent session.</p></div><div class="proof-item"><strong>EXPLICIT LIMITS</strong><p>A software model for learning and experimentation. Results are not physical ECU benchmarks.</p></div></div></div></section>
+    <section class="closing wrap"><div><h2>Your next experiment starts here.</h2><p>No hardware required. Open the model and follow a signal.</p></div><a class="button" href="/simulator/">Open Sentinel ECU <span aria-hidden="true">↗</span></a></section>
+  </main>
+  <footer class="site-footer"><div class="footer-inner wrap"><span>SENTINEL ECU / SOFTWARE-IN-THE-LOOP<br>Vehicle security, open to inspection.</span><div class="footer-links"><a href="/how-it-works/">Architecture</a><a href="/validation/">Method</a><a href="https://github.com/sairaghu401-cloud/sentinel-ecu" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div><span>SIMULATED NETWORK<br>NO PHYSICAL ACTUATOR CONNECTION</span></div></footer>
+</body>
+</html>

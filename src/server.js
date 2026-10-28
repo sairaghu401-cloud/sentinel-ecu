@@ -1,3 +1,4 @@
+import { observePresentation, presentationSnapshot } from './presentation-observer.js';
 import http from 'node:http';
 import { readFile, mkdir, writeFile, rename, readdir, rm } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
@@ -12,8 +13,25 @@ const BODY_LIMIT = 2_200_000;
 const MAX_CLIENTS = 12;
 const MAX_SESSIONS = 30;
 const STATIC = new Map([
-  ['/', ['index.html', 'text/html; charset=utf-8']],
-  ['/index.html', ['index.html', 'text/html; charset=utf-8']],
+  ['/laboratory/', ['index.html', 'text/html; charset=utf-8']],
+  ['/laboratory', ['index.html', 'text/html; charset=utf-8']],
+  ...['sentinel.js', 'session-adapter.js', 'walkthrough-worker.js'].map(file => [`/design/${file}`, [`design/${file}`, 'text/javascript; charset=utf-8']]),
+  ...['sentinel.css', 'production.css'].map(file => [`/design/${file}`, [`design/${file}`, 'text/css; charset=utf-8']]),
+  ...['archivo-var.woff2', 'ibm-plex-mono-latin-400-normal.woff2', 'ibm-plex-mono-latin-500-normal.woff2', 'ibm-plex-mono-latin-600-normal.woff2'].map(file => [`/design/fonts/${file}`, [`design/fonts/${file}`, 'font/woff2']]),
+  ['/', ['signal.html', 'text/html; charset=utf-8']],
+  ['/index.html', ['signal.html', 'text/html; charset=utf-8']],
+  ['/simulator/', ['signal.html', 'text/html; charset=utf-8']],
+  ['/simulator', ['signal.html', 'text/html; charset=utf-8']],
+  ...['how-it-works', 'attack-scenarios', 'validation'].flatMap(slug => [
+    [`/${slug}/`, [`${slug}.html`, 'text/html; charset=utf-8']],
+    [`/${slug}`, [`${slug}.html`, 'text/html; charset=utf-8']],
+  ]),
+  ['/public.css', ['public.css', 'text/css; charset=utf-8']],
+  ['/presentation.css', ['presentation.css', 'text/css; charset=utf-8']],
+  ['/public.js', ['public.js', 'text/javascript; charset=utf-8']],
+  ['/social-preview.png', ['social-preview.png', 'image/png']],
+  ['/sitemap.xml', ['sitemap.xml', 'application/xml; charset=utf-8']],
+  ['/robots.txt', ['robots.txt', 'text/plain; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
   ['/workbench.css', ['workbench.css', 'text/css; charset=utf-8']],
   ['/vendor/tabler.min.css', ['vendor/tabler.min.css', 'text/css; charset=utf-8']],
@@ -69,7 +87,7 @@ function newSession(source = 'synthetic') {
 
 /** Local application factory, exported so HTTP behavior is integration-testable. */
 export async function createApp({ dataDir = join(ROOT, 'data'), persist = true } = {}) {
-  let sim = new Simulation({ seed: 42, profile: 'urban' });
+  let sim = observePresentation(new Simulation({ seed: 42, profile: 'urban' }));
   let session = newSession();
   let provenance = {};
   let storageError = null;
@@ -90,7 +108,7 @@ export async function createApp({ dataDir = join(ROOT, 'data'), persist = true }
   function snapshot() {
     const state = sim.snapshot();
     // UI receives a small window; exports retain the engine's complete bounded buffer.
-    return { ...state, frames: state.frames.slice(0, 150), events: state.events.slice(0, 60),
+    return { ...state, presentation: presentationSnapshot(sim), frames: state.frames.slice(0, 150), events: state.events.slice(0, 60),
       sessionId: session.id, source: session.source,
       storage: { enabled: persist && !storageError, path: persist ? dataDir : null, error: storageError } };
   }
@@ -229,7 +247,7 @@ export async function createApp({ dataDir = join(ROOT, 'data'), persist = true }
             case 'pause': sim.setRunning(false); break;
             case 'step':
               if (session.source === 'imported') throw new HttpError(409, 'Reset before stepping an imported session.');
-              if (sim.snapshot().running) throw new HttpError(409, 'Pause the simulation before stepping.');
+              if (sim.running) throw new HttpError(409, 'Pause the simulation before stepping.');
               sim.advance(integer(input.milliseconds ?? 100, 1, 10000, 'Step duration')); break;
             case 'speed':
               if (![0.5,1,2,5,10].includes(input.speed)) throw new HttpError(400, 'Speed must be 0.5, 1, 2, 5 or 10.');
@@ -237,14 +255,14 @@ export async function createApp({ dataDir = join(ROOT, 'data'), persist = true }
             case 'analyst': sim.setAnalyst(requireBoolean(input.connected, 'Analyst connection')); break;
             case 'clear-attacks': sim.clearAttacks(); break;
             case 'recover': {
-              if (!sim.snapshot().safety.recoveryEligible) throw new HttpError(409, 'Recovery is not yet eligible. Clear attacks and run through the quiet interval first.');
+              if (!sim.safety.recoveryEligible) throw new HttpError(409, 'Recovery is not yet eligible. Clear attacks and run through the quiet interval first.');
               sim.requestRecovery(); break;
             }
             case 'reset': {
               const seed = integer(input.seed ?? 42, 0, 0xffffffff, 'Seed');
               const profile = input.profile ?? 'urban';
               if (!['urban', 'highway'].includes(profile)) throw new HttpError(400, 'Profile must be urban or highway.');
-              const next = new Simulation({ seed, profile });
+              const next = observePresentation(new Simulation({ seed, profile }));
               void save(); sim = next; session = newSession(); provenance = {}; break;
             }
             default: throw new HttpError(400, 'Unknown simulation action.');
@@ -261,7 +279,7 @@ export async function createApp({ dataDir = join(ROOT, 'data'), persist = true }
           let parsed;
           try { parsed = parseTrace(input.text, input.format); }
           catch (error) { throw new HttpError(400, error.message); }
-          const next = new Simulation({ seed: 42, profile: 'urban' });
+          const next = observePresentation(new Simulation({ seed: 42, profile: 'urban' }));
           for (const frame of parsed.frames) next.ingest(frame);
           next.advance(500);
           next.setRunning(false);
@@ -271,6 +289,10 @@ export async function createApp({ dataDir = join(ROOT, 'data'), persist = true }
             note: 'Evaluated against the built-in synthetic vehicle schema; external vehicles require their own ID/payload rules.' };
           push(); void save(); return json(res, 200, { summary, snapshot: snapshot() });
         }
+      }
+      if (req.method === 'GET' && ['/engine/simulation.js', '/engine/presentation-observer.js'].includes(url.pathname)) {
+        const content = await readFile(join(ROOT, 'src', url.pathname.split('/').pop()));
+        res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }); res.end(content); return;
       }
       if (req.method === 'GET' && STATIC.has(url.pathname)) {
         const [file, type] = STATIC.get(url.pathname);
@@ -297,7 +319,8 @@ export async function createApp({ dataDir = join(ROOT, 'data'), persist = true }
         server.listen(port, '127.0.0.1', () => { server.removeListener('error', rejectListen); resolveListen(); });
       });
       clock = setInterval(() => {
-        try { const state = sim.snapshot(); if (state.running) sim.advance(Math.round(50 * state.speed)); }
+        // Read the engine's fields directly; a full snapshot copies the frame, event and series buffers.
+        try { if (sim.running) sim.advance(Math.round(50 * sim.speed)); }
         catch (error) { sim.setRunning(false); console.error(JSON.stringify({ event: 'simulation_paused', message: error.message })); }
       }, 50);
       pushTimer = setInterval(push, 250);

@@ -11,7 +11,7 @@ const out = resolve(root, 'artifacts', 'browser');
 await mkdir(out, { recursive: true });
 let app = await createApp({ persist: false });
 const base = await app.listen(0);
-const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+const browser = await chromium.launch({ headless: true, channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', acceptDownloads: true });
 const page = await context.newPage();
 const runtimeErrors = [];
@@ -32,13 +32,36 @@ async function shot(name, observation) {
   const v = page.viewportSize();
   artifacts.push({ viewport: `${v.width}x${v.height}`, artifact: name, observation });
 }
+// Inject attack needs intent: one press arms it and a second press confirms, or a 600 ms hold injects.
+async function injectAttack(method = 'click') {
+  const button = page.locator('#inject-attack');
+  const before = (await state()).activeAttacks.length;
+  const shown = await page.locator('.active-attack').count();
+  if (method === 'hold') {
+    await button.scrollIntoViewIfNeeded();
+    const box = await button.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(700);
+    await page.mouse.up();
+  } else {
+    const press = method === 'keyboard' ? async () => { await button.focus(); await page.keyboard.press('Enter'); } : () => button.click();
+    await press();
+    assert.equal(await button.getAttribute('data-armed'), '');
+    assert.match(await button.textContent(), /Confirm injection/);
+    await press();
+  }
+  await page.waitForFunction(count => document.querySelectorAll('.active-attack').length > count, shown);
+  assert.equal((await state()).activeAttacks.length, before + 1, 'Exactly one attack per confirmed injection');
+  assert.equal(await button.getAttribute('data-armed'), null);
+}
 async function noPageOverflow() {
   const bounds = await page.evaluate(() => ({ body: document.documentElement.scrollWidth, view: innerWidth }));
   assert.ok(bounds.body <= bounds.view + 1, `Page overflow: ${JSON.stringify(bounds)}`);
 }
 
 try {
-  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${base}/laboratory/`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.querySelector('#connection-state').textContent.includes('Server connected'));
   assert.equal((await state()).running, false);
   assert.ok(await page.locator('#chart-empty').isVisible());
@@ -49,7 +72,7 @@ try {
   await page.locator('#attack-type').selectOption('flooding');
   await page.locator('#attack-intensity').selectOption('1');
   assert.match(await page.locator('#intensity-effect').textContent(), /^100 extra frames\/s/);
-  await page.locator('#inject-attack').click();
+  await injectAttack('keyboard');
   await page.waitForFunction(() => document.querySelector('#active-attacks').textContent.includes('Low · 1/5'));
   await page.locator('#attack-intensity').selectOption('5');
   assert.match(await page.locator('#intensity-effect').textContent(), /15,000 extra frames\/s/);
@@ -118,7 +141,7 @@ try {
   await page.locator('#attack-target').selectOption('768');
   await page.locator('#attack-duration').selectOption('30000');
   await page.locator('#attack-intensity').selectOption('5');
-  await page.locator('#inject-attack').click();
+  await injectAttack('hold');
   await control({ action: 'step', milliseconds: 10000 });
   await page.waitForFunction(() => document.querySelector('#gateway-assessment').textContent === 'Threat detected · filtering');
   assert.equal(await page.locator('#safety-state').textContent(), 'Shutdown not requested');
@@ -135,8 +158,9 @@ try {
 
   await page.locator('#attack-type').selectOption('payload');
   await page.locator('#attack-duration').selectOption('3000');
-  await page.locator('#inject-attack').click();
+  await injectAttack('click');
   await page.waitForFunction(() => !document.querySelector('#active-attacks').hidden);
+  passed('Inject attack arms on one press and injects on a confirming press, keyboard confirm or 600 ms hold');
   await control({ action: 'step', milliseconds: 1500 });
   await page.waitForFunction(() => document.querySelector('#safety-state').textContent.includes('Degraded'));
   assert.ok((await state()).metrics.blocked > 0);

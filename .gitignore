@@ -13,3 +13,5 @@ artifacts/project-reference.png
 artifacts/browser/
 *.zip
 !examples/capture.log
+
+artifacts/design-review/

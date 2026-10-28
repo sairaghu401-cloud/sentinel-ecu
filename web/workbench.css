@@ -60,3 +60,97 @@ main{max-width:none;padding:22px 4% 24px}.page-heading{margin-bottom:27px}.eyebr
 .intensity-preview{margin-top:14px;padding:11px 12px;background:#f5f7f9;border-left:3px solid #9eacb9;border-radius:3px}.intensity-preview strong{font-size:12px;color:#435567}.intensity-preview p{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6}.intensity-preview[data-level="2"]{border-color:#b7a477}.intensity-preview[data-level="3"]{border-color:#c98a4e;background:#fff7ed}.intensity-preview[data-level="4"],.intensity-preview[data-level="5"]{border-color:#bc603a;background:#fff2e9}.intensity-caveat{font-size:11px;line-height:1.6;color:var(--dim);margin-top:8px}.attack-details{min-width:0}.attack-details strong{display:block;font-size:11px;color:var(--text)}.attack-details p{font-size:11px;color:var(--muted);line-height:1.6;margin-top:5px}.attack-strength{display:inline-block;margin-top:7px;background:#eef2f6;color:#4f6071;border-radius:3px;padding:3px 6px;font-size:10px}.attack-strength.strength-3{background:#fff0d9;color:#88581f}.attack-strength.strength-4,.attack-strength.strength-5{background:#ffe7d9;color:#984521}.attack-remaining{white-space:nowrap;font-size:10px;padding-top:2px}
 @media(max-width:1150px){.vehicle-telemetry>div:nth-child(n+4){border-color:#dce2e8}.signal-point>span{font-size:8px}.signal-point i{font-size:8px}.metric-description{font-size:11px}}
 @media(max-width:650px){.page-heading h1{font-size:32px;letter-spacing:-.8px}.metric-value{font-size:29px}.metric-label{font-size:12px}.metric-description{font-size:11px}.metric{padding:13px 12px}.map-note{background:#fffffff0;font-size:9px}.drawing-meta{font-size:8px}.signal-point>span{font-size:8px}.signal-point strong{font-size:18px}.vehicle-telemetry>div>span{font-size:8px}.vehicle-telemetry strong{font-size:18px}.vehicle-telemetry>div:nth-child(n+4){border-color:#dce2e8}.map-caption{font-size:11px}.map-caption>span:last-child{font-size:10px}.network-footer{font-size:10px}.chart-legend{font-size:11px}.status-badge{font-size:6px}.brand{font-size:20px}}
+
+/* Motion. Each rule below answers a real model state change (docs/DESIGN.md, Motion).
+   Transitions are enabled only after the first snapshot, so loading never animates. */
+.risk-meter{overflow:hidden}
+.risk-meter span{width:100%;border-radius:0;transform:scaleX(0);transform-origin:left center}
+.motion-ready .risk-meter span{transition:background-color 350ms var(--ease)}
+.motion-ready .risk-meter.level-shift span{transition:transform 350ms var(--ease),background-color 350ms var(--ease)}
+.motion-ready .status-badge{transition:color 350ms var(--ease),background-color 350ms var(--ease)}
+.motion-ready :is(.gateway-chip,.gateway-node rect,.gateway-shield,.shield-tick){transition:fill 350ms var(--ease),stroke 350ms var(--ease)}
+/* Level palette as oklch(), each an exact match for the previous hex. CSS blends two legacy hex colours in
+   gamma-encoded sRGB; with oklch() endpoints the 350 ms transitions blend in Oklab, so midpoints stay clean. */
+#main-content[data-gateway-level] .gateway-chip{fill:oklch(90.81% 0.0654 66.84);stroke:oklch(67.44% 0.1171 57.86)}
+#main-content[data-gateway-level=warn] .gateway-chip{fill:oklch(92.99% 0.0483 84.56);stroke:oklch(51.29% 0.1002 71.81)}
+#main-content[data-gateway-level=filter] .gateway-chip{fill:oklch(92.96% 0.0298 44.04);stroke:oklch(49.07% 0.1284 32.79)}
+#main-content[data-gateway-level=request_degrade] .gateway-chip{fill:oklch(90.35% 0.0513 36.10);stroke:oklch(55.00% 0.1492 33.81)}
+#main-content[data-gateway-level] .gateway-node rect{fill:oklch(96.30% 0.0257 67.52);stroke:oklch(65.15% 0.1195 56.71)}
+#main-content[data-gateway-level=warn] .gateway-node rect{fill:oklch(96.04% 0.0297 85.56);stroke:oklch(51.29% 0.1002 71.81)}
+#main-content[data-gateway-level=filter] .gateway-node rect{fill:oklch(96.15% 0.0172 44.81);stroke:oklch(49.07% 0.1284 32.79)}
+#main-content[data-gateway-level=request_degrade] .gateway-node rect{fill:oklch(94.30% 0.0296 38.56);stroke:oklch(55.00% 0.1492 33.81)}
+#main-content[data-gateway-level] .gateway-shield{fill:oklch(92.99% 0.0470 64.09);stroke:oklch(54.75% 0.1207 53.25)}
+#main-content[data-gateway-level=warn] .gateway-shield{fill:oklch(93.94% 0.0430 87.96);stroke:oklch(51.29% 0.1002 71.81)}
+#main-content[data-gateway-level=filter] .gateway-shield{fill:oklch(94.10% 0.0235 44.34);stroke:oklch(49.07% 0.1284 32.79)}
+#main-content[data-gateway-level=request_degrade] .gateway-shield{fill:oklch(90.35% 0.0513 36.10);stroke:oklch(55.00% 0.1492 33.81)}
+#main-content[data-gateway-level] .shield-tick{stroke:oklch(54.75% 0.1207 53.25)}
+#main-content[data-gateway-level=warn] .shield-tick{stroke:oklch(51.29% 0.1002 71.81)}
+#main-content[data-gateway-level=filter] .shield-tick{stroke:oklch(49.07% 0.1284 32.79)}
+#main-content[data-gateway-level=request_degrade] .shield-tick{stroke:oklch(55.00% 0.1492 33.81)}
+.status-badge.observe{background:oklch(95.90% 0.0059 239.82);color:oklch(45.70% 0.0309 248.50)}
+.status-badge.warn{background:oklch(93.94% 0.0430 87.96);color:oklch(51.29% 0.1002 71.81)}
+.status-badge:is(.filter,.request_degrade){background:oklch(94.10% 0.0235 44.34);color:oklch(49.07% 0.1284 32.79)}
+:root{--gauge-low:oklch(56.83% 0.1447 46.62);--gauge-mid:oklch(50.84% 0.1232 51.38);--gauge-high:oklch(52.84% 0.1536 27.47)}
+.gateway-pulse{fill:none;stroke:#b84931;stroke-width:1.5;opacity:0;pointer-events:none;transform-box:fill-box;transform-origin:center;vector-effect:non-scaling-stroke}
+main[data-gateway-level=warn] .gateway-pulse{stroke:#8a5c17}
+.attack-panel{position:relative}
+.attack-panel::before{content:"";position:absolute;inset:0 auto 0 0;width:2px;background:var(--red);opacity:0;pointer-events:none}
+.can-a-alert{opacity:0;pointer-events:none}
+.can-a-alert rect{fill:var(--red);opacity:.1}
+.can-a-alert path{fill:none;stroke:var(--red);stroke-width:2}
+.motion-ready .attack-panel::before,.motion-ready .can-a-alert{transition:opacity 400ms ease-in}
+main[data-attack-live=true] .attack-panel::before,main[data-attack-live=true] .can-a-alert{opacity:1}
+.motion-ready main[data-attack-live=true] .attack-panel::before,.motion-ready main[data-attack-live=true] .can-a-alert{transition:opacity 200ms var(--ease)}
+.safety-banner{display:flex;align-items:center;gap:12px;height:40px;padding:0 22px;border-top:1px solid var(--line-soft);font-size:12px;white-space:nowrap;overflow:hidden}
+.safety-banner-label{font:9px var(--mono);letter-spacing:.8px;opacity:.8}
+.safety-banner strong{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.safety-banner-time{margin-left:auto;font:10px var(--mono);font-variant-numeric:tabular-nums}
+.safety-banner[data-state=requested]{background:#fdf1df;color:#7a4a10}
+.safety-banner[data-state=degraded]{background:#fbe9e4;color:#8e3525}
+.safety-banner[data-state=normal]{background:#eef4f0;color:#2f5f4c}
+/* The banner takes its height from the list, so a full timeline does not grow. */
+.events-panel:has(.safety-banner:not([hidden])) .event-list{max-height:290px}
+@media(max-width:650px){.safety-banner{padding:0 18px;gap:9px}}
+.byte-changed{border-radius:2px}
+.chart-reveal{transform-box:fill-box;transform-origin:0 0}
+.chart-attack-window{fill:#b33e36;fill-opacity:.07}
+.chart-attack-edge{fill:#b33e36;fill-opacity:.55}
+.legend-window{display:inline-block;width:10px;height:8px;flex-shrink:0;background:#f7e8e6;border-top:2px solid #d59591}
+.tabs{position:relative;--tab-inset:16px}
+.tabs[data-indicator] .nav-item.active::after{content:none}
+.tab-indicator{position:absolute;left:0;bottom:-1px;width:100px;height:3px;background:#d67532;transform:scaleX(0);transform-origin:0 0;pointer-events:none;transition:transform 300ms var(--ease)}
+.tab-indicator.instant{transition:none}
+@media(max-width:650px){.tabs{--tab-inset:7px}}
+@media(forced-colors:active){.tab-indicator{background:CanvasText}}
+/* Until the first snapshot, readouts show static placeholders instead of zeros the model never reported. */
+.awaiting-snapshot [data-skeleton],.awaiting-snapshot [data-skeleton] *{color:transparent!important}
+.awaiting-snapshot [data-skeleton]{position:relative}
+.awaiting-snapshot [data-skeleton]::after{content:"";position:absolute;left:0;top:50%;width:var(--skeleton-width,100%);min-width:2.2em;height:.6em;transform:translateY(-50%);border-radius:2px;background:#e6eaee}
+.awaiting-snapshot :is(#gateway-evidence,#analyst-evidence){min-height:1.65em}
+.awaiting-snapshot :is(#status-badge,#event-count){color:transparent!important;background:#e6eaee}
+.metric-value{--skeleton-width:3.6ch}
+.metric-description{--skeleton-width:72%}
+#model-time{--skeleton-width:9ch}
+:is(#gateway-assessment,#analyst-assessment,#analyst-description){--skeleton-width:60%}
+:is(#gateway-evidence,#analyst-evidence,#safety-reason){--skeleton-width:88%}
+.awaiting-snapshot #safety-reason::after{top:.5em;transform:none}
+.awaiting-snapshot #safety-reason::before{content:"";position:absolute;left:0;top:2.1em;width:52%;height:.6em;border-radius:2px;background:#e6eaee}
+/* Inject attack: hold ring (two clipped half rings rotated in turn) and a press-twice armed state. */
+#inject-attack{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.button.danger .inject-label{font-size:inherit;line-height:inherit}
+.button.danger .hold-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:22px;height:22px;font-size:0}
+.hold-ring::before{content:"";position:absolute;inset:0;border:2px solid #edc7a6;border-radius:50%;opacity:0}
+.button.danger .hold-half{position:absolute;top:0;width:50%;height:100%;overflow:hidden}
+.button.danger .hold-half:first-child{left:50%}
+.button.danger .hold-half:nth-child(2){left:0}
+.hold-half i{position:absolute;top:0;width:200%;height:100%;border:2px solid transparent;border-top-color:#9b4d12;border-right-color:#9b4d12;border-radius:50%}
+.hold-half:first-child i{left:-100%;transform:rotate(-135deg)}
+.hold-half:nth-child(2) i{left:0;transform:rotate(45deg)}
+.button.danger .hold-glyph{font-size:15px;line-height:1}
+.motion-ready .hold-ring::before{transition:opacity 120ms var(--ease)}
+#inject-attack:is([data-holding],[data-armed]) .hold-ring::before{opacity:1}
+#inject-attack[data-armed]{background:#ffd5af;border-color:#d98f55}
+/* Idle half rings end exactly on their clip edge; showing them only during a hold avoids a hairline seam. */
+.button.danger .hold-half{visibility:hidden}
+#inject-attack[data-holding] .hold-half{visibility:visible}
+@media(prefers-reduced-motion:reduce){#inject-attack[data-holding] .hold-half{visibility:hidden}}

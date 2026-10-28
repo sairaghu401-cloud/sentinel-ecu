@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sentinel ECU — Vehicle network security simulation</title>
+<meta name="description" content="Sentinel ECU is a browser-based simulation of a protected vehicle network: an ESP32 traffic generator, an STM32 security gateway, a Raspberry Pi analyst and an independent safety task. No physical hardware is connected.">
+<link rel="preload" href="/design/fonts/archivo-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/design/sentinel.css">
+<link rel="stylesheet" href="/design/production.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://sentinel-ecu.pages.dev/">
+<meta name="theme-color" content="#f5f3ed">
+<meta property="og:title" content="Sentinel ECU — Vehicle network security simulation">
+<meta property="og:description" content="Follow real simulated CAN messages through gateway filtering, anomaly analysis and independent safety.">
+<meta property="og:image" content="https://sentinel-ecu.pages.dev/social-preview.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body data-theme="night" data-view="intro">
+
+<!-- Icon sprite (inline, stroke icons; currentColor) -->
+<svg class="ref-style-1" width="0" height="0" aria-hidden="true">
+  <symbol id="i-mark" viewBox="0 0 24 24"><path d="M3 12h5M16 12h5" stroke="currentColor" stroke-width="2" fill="none"/><rect x="9" y="4" width="2.5" height="6" fill="currentColor"/><rect x="12.5" y="14" width="2.5" height="6" fill="currentColor"/><rect x="9" y="14" width="2.5" height="6" fill="currentColor" opacity=".35"/><rect x="12.5" y="4" width="2.5" height="6" fill="currentColor" opacity=".35"/></symbol>
+  <symbol id="i-play" viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 16 16"><rect x="3.5" y="2.5" width="3" height="11" fill="currentColor"/><rect x="9.5" y="2.5" width="3" height="11" fill="currentColor"/></symbol>
+  <symbol id="i-step" viewBox="0 0 16 16"><path d="M3 2.5v11l7-5.5z" fill="currentColor"/><rect x="11" y="2.5" width="2" height="11" fill="currentColor"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 16 16"><path d="M3.5 8a4.5 4.5 0 1 0 1.4-3.3M3.5 2.5v3h3" stroke="currentColor" stroke-width="1.6" fill="none"/></symbol>
+  <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M8 7v4.5M8 4.6v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5" fill="none"/></symbol>
+  <symbol id="i-input" viewBox="0 0 16 16"><path d="M1.5 8h8M6.5 4.5 10 8l-3.5 3.5" stroke="currentColor" stroke-width="1.7" fill="none"/><rect x="11.5" y="3" width="3" height="10" fill="currentColor"/></symbol>
+  <symbol id="i-forward" viewBox="0 0 16 16"><path d="M2 8h10M8.5 4.5 12 8l-3.5 3.5" stroke="currentColor" stroke-width="1.8" fill="none"/></symbol>
+  <symbol id="i-receive" viewBox="0 0 16 16"><path d="M1.5 8h7" stroke="currentColor" stroke-width="1.6"/><circle cx="11.5" cy="8" r="3" stroke="currentColor" stroke-width="1.6" fill="none"/></symbol>
+  <symbol id="i-block" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M4.2 11.8l7.6-7.6" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 16 16"><path d="M8 2v9" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 1.6"/><path d="M4.5 8.5 8 12l3.5-3.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M3 14.5h10" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-contain" viewBox="0 0 16 16"><path d="M2 8h6" stroke="currentColor" stroke-width="1.7"/><rect x="9" y="2.5" width="2.2" height="11" fill="currentColor"/><path d="M13.5 5.5v5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="1.5 1.5"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="8" cy="8" r="2" fill="currentColor"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 1.8 15 14H1z" fill="currentColor"/><path d="M8 6v4" stroke="#fff" stroke-width="1.7"/><circle cx="8" cy="11.9" r=".95" fill="#fff"/></symbol>
+  <symbol id="i-crit" viewBox="0 0 16 16"><path d="M5.2 1.5h5.6l3.7 3.7v5.6l-3.7 3.7H5.2l-3.7-3.7V5.2z" fill="currentColor" stroke="#fff" stroke-width="1"/><path d="M8 4.5v4.5" stroke="#B3261E" stroke-width="1.8"/><circle cx="8" cy="11.3" r="1" fill="#B3261E"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="M2.5 8.5 6.3 12 13.5 4" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
+  <symbol id="i-recover" viewBox="0 0 16 16"><path d="M12.5 8A4.5 4.5 0 1 1 11 4.6M12.5 2v3h-3" stroke="currentColor" stroke-width="1.7" fill="none"/></symbol>
+  <symbol id="i-brace" viewBox="0 0 16 16"><rect x="2" y="2" width="3" height="12" fill="currentColor"/><path d="M7 4.5h7M7 8h5M7 11.5h7" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 20 20"><path d="M2 10h4l2-5 4 10 2-5h4" stroke="currentColor" stroke-width="1.7" fill="none"/></symbol>
+  <symbol id="i-attack" viewBox="0 0 20 20"><path d="M2 10h9M8 6l4 4-4 4" stroke="currentColor" stroke-width="1.7" fill="none"/><rect x="14" y="4" width="3.5" height="12" fill="currentColor"/></symbol>
+  <symbol id="i-evidence" viewBox="0 0 20 20"><path d="M3 4.5h14M3 10h14M3 15.5h9" stroke="currentColor" stroke-width="1.7"/><circle cx="15.5" cy="15.5" r="2" fill="currentColor"/></symbol>
+  <symbol id="i-sim" viewBox="0 0 20 20"><path d="M3 6h14M3 14h14" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="6" r="2.2" fill="var(--paper,#fff)" stroke="currentColor" stroke-width="1.7"/><circle cx="13" cy="14" r="2.2" fill="var(--paper,#fff)" stroke="currentColor" stroke-width="1.7"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" fill="none"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 16 16"><path d="M8 14.5V9M4.5 2h7l-1 4 2 3h-9l2-3z" stroke="currentColor" stroke-width="1.5" fill="none"/></symbol>
+  <symbol id="i-close" viewBox="0 0 16 16"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.7"/></symbol>
+  <symbol id="i-ecu" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 1v2M10 1v2M6 13v2M10 13v2M1 6h2M1 10h2M13 6h2M13 10h2" stroke="currentColor" stroke-width="1.3"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar" id="topbar">
+  <a class="wordmark" href="#intro" aria-label="Sentinel ECU home"><svg aria-hidden="true"><use href="#i-mark"/></svg><span>SENTINEL</span><span class="wm-ecu">ECU</span></a>
+  <nav class="topnav" aria-label="Primary">
+    <a href="#intro" aria-current="page">Overview</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#workbench" class="nav-cta">Simulator</a>
+  </nav>
+  <button class="motion-toggle" type="button" aria-pressed="false" data-motion-toggle><span>Reduce motion</span></button>
+</header>
+
+<main id="main">
+
+<!-- ============================ 1 · INTRODUCTION ============================ -->
+<section class="view view-intro is-active" id="intro" aria-labelledby="intro-h">
+  <div class="intro-copy">
+    <p class="eyebrow">[ vehicle network security ] · software simulation</p>
+    <h1 id="intro-h" class="display"><span class="d-sentinel">Sentinel</span><span class="d-ecu">ECU</span></h1>
+    <p class="lede">A browser-based simulation of a protected vehicle network. Send traffic through a security gateway, inject an attack you configure, and see — separately — what the gateway does, what the analyst observes and whether the safety task acts.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#workbench" data-go="workbench">Open simulator <svg width="16" height="16" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      <a class="btn btn-ghost" href="#architecture" data-go="architecture">How it works</a>
+    </div>
+    <p class="fineprint"><svg aria-hidden="true"><use href="#i-info"/></svg>No physical hardware is connected. Open the simulator to follow real model decisions. The introductory vehicle is an illustrative schematic.</p>
+  </div>
+
+  <div class="intro-stage-slot stage-slot" data-slot="intro">
+    <!-- The persistent stage starts here and FLIPs into the architecture and workbench slots -->
+    <div class="stage" id="stage">
+      <canvas class="field" aria-hidden="true"></canvas>
+      <svg class="net" id="net" viewBox="0 0 1000 600" role="img" aria-labelledby="net-title net-desc">
+        <title id="net-title">Sentinel ECU message journey</title>
+        <desc id="net-desc">Left to right: the ESP32 traffic generator offers frames to CAN A, the incoming segment. The STM32 gateway inspects each frame. Frames that pass are forwarded on CAN B to the protected ECU. Frames that fail a gateway rule are blocked; they stop at the gateway and are shown in a rejection lane below it, which is an explanatory area, not a bus. Frames dropped because a bounded queue is full are shown where that happens: the CAN A ingress queue or the gateway's CAN B egress queue. Above, the Raspberry Pi analyst receives copies of inspected payloads and returns evidence; it is not in the forwarding path. Below, the independent safety task receives degradation requests from the gateway and latches the vehicle's mode.</desc>
+        <defs>
+          <pattern id="dither-orange" width="3" height="3" patternUnits="userSpaceOnUse"><rect width="3" height="3" fill="#FBE5D6"/><rect width="1.4" height="1.4" fill="#E8590C"/></pattern>
+          <marker id="m-ink" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 1 9 5 0 9z" class="mk-ink"/></marker>
+          <marker id="m-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 1 9 5 0 9z" class="mk-blue"/></marker>
+          <marker id="m-grey" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 1 9 5 0 9z" class="mk-grey"/></marker>
+          <marker id="m-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 1 9 5 0 9z" class="mk-teal"/></marker>
+        </defs>
+
+        <!-- Vehicle plan view: deliberately quiet so packets, labels and decisions lead (front of vehicle is right) -->
+        <g class="vehicle" id="vehicle" aria-hidden="true">
+          <path class="body-outline" id="body-path" d="M120 140C300 124 700 122 880 140C950 148 982 230 984 310C982 390 950 472 880 480C700 498 300 496 120 480C50 472 18 390 16 310C18 230 50 148 120 140Z"/>
+          <path class="body-detail" d="M330 176L670 174C740 178 770 240 772 310C770 380 740 442 670 446L330 444C292 440 278 380 278 310C278 240 292 180 330 176Z"/>
+          <path class="body-detail" d="M670 174C694 214 696 406 670 446M330 176C312 214 312 406 330 444"/>
+          <rect class="wheel" x="160" y="114" width="130" height="14" rx="6"/><rect class="wheel" x="160" y="490" width="130" height="14" rx="6"/>
+          <rect class="wheel" x="710" y="114" width="130" height="14" rx="6"/><rect class="wheel" x="710" y="490" width="130" height="14" rx="6"/>
+        </g>
+
+        <!-- Analyst side channel: observation only, never a barrier on the path -->
+        <g class="side f-3">
+          <path class="obs" d="M474 224V102" marker-end="url(#m-ink)"/>
+          <path class="obs obs-ev" d="M526 96V218" marker-end="url(#m-ink)"/>
+          <text class="t-side" x="462" y="150" text-anchor="end">copy of inspected payload</text>
+          <text class="t-side" x="462" y="168" text-anchor="end">40 ms · observe only</text>
+          <text class="t-side" x="538" y="150">evidence ↓</text>
+          <text class="t-side" x="538" y="168">risk · holds</text>
+        </g>
+        <g class="node analyst f-3">
+          <rect class="state-ring an-ring" x="402" y="16" width="196" height="84" rx="42"/>
+          <rect class="box" x="410" y="24" width="180" height="68" rx="34"/>
+          <text class="t-strong t-center" x="500" y="54" text-anchor="middle">ANALYST</text>
+          <text class="t-sub" x="500" y="76" text-anchor="middle">Raspberry Pi</text>
+        </g>
+
+        <!-- Main message path: ESP32 → CAN A → STM32 gateway → CAN B → protected ECU -->
+        <g class="path-a f-1 f-2">
+          <line class="bus" x1="184" y1="300" x2="420" y2="300"/>
+          <path class="flow-chevron" d="M292 294l10 6-10 6zM352 294l10 6-10 6z"/>
+          <text class="t-bus" x="214" y="328">CAN A<tspan class="t-bus-sub" dx="6">· incoming traffic</tspan></text>
+        </g>
+        <g class="path-b f-2">
+          <line class="bus-lane" x1="580" y1="300" x2="820" y2="300"/>
+          <line class="bus" x1="580" y1="300" x2="820" y2="300"/>
+          <path class="flow-chevron chev-b" d="M672 294l10 6-10 6zM732 294l10 6-10 6z"/>
+          <text class="t-bus" x="614" y="328">CAN B<tspan class="t-bus-sub t-fwd" dx="6">· forwarded traffic</tspan></text>
+        </g>
+
+        <g class="node gen f-1">
+          <rect class="box" x="30" y="256" width="150" height="88" rx="2"/>
+          <text class="t-strong" x="46" y="296">ESP32</text>
+          <text class="t-sub2" x="46" y="316">traffic generator</text>
+          <text class="t-sub2" x="46" y="333">6 signals + attacks</text>
+        </g>
+        <g class="queue q-in f-1 f-2" aria-hidden="true"><rect x="190" y="290" width="3" height="20"/><rect x="196" y="290" width="3" height="20"/><rect x="202" y="290" width="3" height="20"/></g>
+
+        <g class="node gate f-2 f-3 f-4">
+          <rect class="state-ring gw-ring" x="412" y="218" width="176" height="164" rx="4"/>
+          <rect class="box" x="420" y="226" width="160" height="148" rx="2"/>
+          <rect class="gate-wall" x="420" y="226" width="10" height="64"/>
+          <rect class="gate-wall" x="420" y="310" width="10" height="64"/>
+          <text class="t-strong t-gw d-only" x="442" y="250">STM32 GATEWAY</text>
+          <text class="t-strong m-only" x="446" y="262">STM32</text>
+          <text class="t-sub" x="446" y="338">filtering</text>
+          <text class="t-sub2" x="446" y="356">6 rule checks</text>
+        </g>
+        <g class="queue q-eg f-2" aria-hidden="true"><rect x="590" y="290" width="3" height="20"/><rect x="596" y="290" width="3" height="20"/><rect x="602" y="290" width="3" height="20"/></g>
+
+        <g class="node ecu f-2 f-4">
+          <rect class="state-ring ecu-ring" x="812" y="248" width="156" height="104" rx="4"/>
+          <rect class="box" x="820" y="256" width="140" height="88" rx="2"/>
+          <text class="t-strong d-only" x="836" y="290">PROTECTED</text>
+          <text class="t-strong" x="836" y="311">ECU</text>
+          <text class="t-sub2" x="836" y="333">receives CAN B</text>
+        </g>
+
+        <!-- Outcome shelf: where frames that do not reach the ECU end up (explanatory, not buses) -->
+        <g class="shelf f-2">
+          <path class="drop-link" d="M199 314V386" marker-end="url(#m-grey)"/>
+          <rect class="bin" x="30" y="392" width="240" height="88" rx="3"/>
+          <path class="lane" d="M407 312V386" marker-end="url(#m-blue)"/>
+          <rect class="tray" x="280" y="392" width="290" height="88" rx="3"/>
+          <path class="drop-link" d="M598 314V386" marker-end="url(#m-grey)"/>
+          <rect class="bin" x="586" y="392" width="240" height="88" rx="3"/>
+          <!-- small screens: the HTML bin labels give way to large in-diagram labels -->
+          <text class="t-shelf m-only" x="150" y="428" text-anchor="middle">DROPPED</text><text class="t-shelf-n m-only" x="150" y="466" text-anchor="middle" data-shelf="binIn">0</text>
+          <text class="t-shelf blk m-only" x="425" y="428" text-anchor="middle">BLOCKED</text><text class="t-shelf-n blk m-only" x="425" y="466" text-anchor="middle" data-shelf="tray">0</text>
+          <text class="t-shelf m-only" x="706" y="428" text-anchor="middle">DROPPED</text><text class="t-shelf-n m-only" x="706" y="466" text-anchor="middle" data-shelf="binEg">0</text>
+        </g>
+
+        <!-- Safety: the gateway can only request; the independent task latches the mode -->
+        <g class="req f-4"><path class="req-path" d="M578 374V548H600" marker-end="url(#m-ink)"/><text class="t-side" x="568" y="512" text-anchor="end">degrade request</text><text class="t-side" x="568" y="530" text-anchor="end">(request only)</text></g>
+        <g class="node safety f-4">
+          <rect class="state-ring sf-ring" x="602" y="508" width="236" height="80" rx="4"/>
+          <rect class="box" x="610" y="516" width="220" height="64" rx="2"/>
+          <rect class="bar" x="610" y="516" width="6" height="64"/>
+          <text class="t-strong t-safety" x="630" y="543">SAFETY TASK</text>
+          <text class="t-sub2" x="630" y="565">independent · latches mode</text>
+        </g>
+        <g class="latch f-4"><path class="latch-path" d="M830 548H890V352" marker-end="url(#m-ink)"/><text class="t-side" x="898" y="440">latched mode</text><text class="t-side" x="898" y="458">motor enable</text></g>
+
+        <!-- Injection point (operator input = orange) -->
+        <g class="inject-group f-1"><path class="inject-mark" d="M188 282h-6v36h6"/><text class="t-accent" x="30" y="244">▸ injected frames enter here</text></g>
+
+        <path class="leader" id="leader" d="M634 118H606L588 222"/>
+        <g id="hl" class="hl" aria-hidden="true"></g>
+        <g id="packets" aria-hidden="true"></g>
+      </svg>
+      <div class="overlay" id="overlay"></div>
+    </div>
+  </div>
+
+  <dl class="intro-index">
+    <div><dt>01</dt><dd>Traffic · ESP32</dd></div>
+    <div><dt>02</dt><dd>Gateway · STM32</dd></div>
+    <div><dt>03</dt><dd>Analyst · Raspberry Pi</dd></div>
+    <div><dt>04</dt><dd>Safety · independent</dd></div>
+  </dl>
+</section>
+
+<!-- ============================ 2 · ARCHITECTURE ============================ -->
+<section class="view view-arch" id="architecture" aria-labelledby="arch-h">
+  <div class="arch-stage-wrap">
+    <div class="arch-stage-slot stage-slot" data-slot="architecture"></div>
+    <p class="arch-annot" id="arch-annot" aria-live="polite"><b>01</b><span></span></p>
+  </div>
+  <div class="arch-copy">
+    <p class="eyebrow">How it works</p>
+    <h2 id="arch-h">Four parts. Four separate jobs.</h2>
+    <p>Traffic flows one way: ESP32 → CAN A → STM32 gateway → CAN B → protected ECU. The analyst watches a copy; the safety task acts only on request. Each step below runs the real engine with a seeded attack.</p>
+    <ol class="steps" id="steps">
+      <li class="step is-active" data-step="1">
+        <button type="button" aria-expanded="true" aria-controls="sb1"><span class="num">01</span><span class="step-title">Generate traffic</span><span class="step-hw">ESP32 → CAN A</span></button>
+        <div class="step-body" id="sb1"><div>
+          <p>The ESP32 role generates six signals — 0x120 Brake, 0x130 Steering and 0x200 Powertrain every 20 ms; 0x300 Battery and 0x400 Body every 100 ms; 0x500 Infotainment every 200 ms. Frames from an attack you inject leave from here too, into CAN A’s bounded queue.</p>
+          <dl class="resp"><dt>Does</dt><dd>Offers baseline and injected frames to CAN A.</dd><dt class="not">Does not</dt><dd>Decide anything. Its attack labels are used only for scoring.</dd></dl>
+        </div></div>
+      </li>
+      <li class="step" data-step="2">
+        <button type="button" aria-expanded="false" aria-controls="sb2"><span class="num">02</span><span class="step-title">Filter at the gateway</span><span class="step-hw">STM32 · A → B</span></button>
+        <div class="step-body" id="sb2"><div>
+          <p>The gateway checks each frame’s identifier, length, timing, rate, physical plausibility and rolling counter. A frame that fails is <em>blocked</em> and never reaches CAN B. A frame that passes is <em>forwarded</em> to the protected ECU. If a bounded queue is full, a frame is <em>dropped</em> — an availability loss, not a detection.</p>
+          <dl class="resp"><dt>Does</dt><dd>Forwards or blocks every inspected frame; can request degradation.</dd><dt class="not">Does not</dt><dd>Learn normal payloads or latch the vehicle’s mode.</dd></dl>
+        </div></div>
+      </li>
+      <li class="step" data-step="3">
+        <button type="button" aria-expanded="false" aria-controls="sb3"><span class="num">03</span><span class="step-title">Assess traffic</span><span class="step-hw">Raspberry Pi analyst</span></button>
+        <div class="step-body" id="sb3"><div>
+          <p>The gateway copies inspected payloads to the analyst, which scores them against a model trained on separate clean traffic (40 ms modeled delay). Repeated outliers return as evidence; the gateway may then hold that identifier. Disconnecting the analyst leaves every gateway rule running.</p>
+          <dl class="resp"><dt>Does</dt><dd>Observes copied payloads and returns evidence.</dd><dt class="not">Does not</dt><dd>Sit in the forwarding path or block frames itself.</dd></dl>
+        </div></div>
+      </li>
+      <li class="step" data-step="4">
+        <button type="button" aria-expanded="false" aria-controls="sb4"><span class="num">04</span><span class="step-title">Degrade or recover</span><span class="step-hw">Independent safety task</span></button>
+        <div class="step-body" id="sb4"><div>
+          <p>Sustained, confirmed evidence on a critical signal lets the gateway send a degradation request — nothing more. The independent safety task acknowledges it (60 ms modeled), latches the degraded mode and disables the modeled motor. Recovery needs cleared attacks, a 2.5 s quiet interval and an explicit request.</p>
+          <dl class="resp"><dt>Does</dt><dd>Acknowledges, latches and releases the degraded mode.</dd><dt class="not">Does not</dt><dd>Filter traffic or detect anomalies.</dd></dl>
+        </div></div>
+      </li>
+    </ol>
+    <div class="arch-nav">
+      <button class="btn btn-quiet" type="button" data-step-prev>Previous</button>
+      <button class="btn btn-ghost" type="button" data-step-next>Next step</button>
+      <span class="spacer"></span>
+      <a class="btn btn-primary" href="#workbench" data-go="workbench">Open simulator <svg width="16" height="16" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 3 · WORKBENCH ============================ -->
+<section class="view view-bench" id="workbench" aria-labelledby="bench-h">
+  <header class="appbar">
+    <a class="wordmark" href="#intro" data-go="intro" aria-label="Sentinel ECU overview"><svg aria-hidden="true"><use href="#i-mark"/></svg><span>SENTINEL</span><span class="wm-ecu">ECU</span></a>
+    <h2 id="bench-h" class="sr-only">Simulation workbench</h2>
+    <span class="sim-badge">Simulation<span class="sb-long">· no hardware connected</span></span>
+    <span class="divider" aria-hidden="true"></span>
+
+    <div class="sim-controls" id="sim-controls" role="group" aria-label="Simulation controls">
+      <button class="ctl-btn run" type="button" aria-pressed="false" data-run><svg aria-hidden="true"><use href="#i-play"/></svg><span>Run</span></button>
+      <button class="ctl-btn" type="button" data-step-sim aria-label="Step 100 ms (paused only)"><svg aria-hidden="true"><use href="#i-step"/></svg><span class="step-label">Step</span></button>
+      <div class="ctl ctl-speed"><span class="label" id="spd-l">Speed</span>
+        <div class="seg" role="radiogroup" aria-labelledby="spd-l">
+          <input type="radio" name="speed" id="spd-05" value="0.5"><label for="spd-05">0.5×</label>
+          <input type="radio" name="speed" id="spd-1" value="1" checked><label for="spd-1">1×</label>
+          <input type="radio" name="speed" id="spd-2" value="2"><label for="spd-2">2×</label>
+          <input type="radio" name="speed" id="spd-5" value="5"><label for="spd-5">5×</label>
+          <input type="radio" name="speed" id="spd-10" value="10"><label for="spd-10">10×</label>
+        </div></div>
+      <label class="ctl ctl-profile"><span class="label">Profile</span>
+        <select class="field-sel" data-profile><option value="urban">Urban</option><option value="highway">Highway</option></select></label>
+      <label class="ctl ctl-seed"><span class="label">Seed</span><input class="field-num" type="text" inputmode="numeric" value="42" data-seed aria-describedby="seed-hint"></label>
+      <span id="seed-hint" class="sr-only">Same seed, profile and commands reproduce the same decisions. Applied on reset.</span>
+      <button class="ctl-btn ctl-reset" type="button" data-reset><svg aria-hidden="true"><use href="#i-reset"/></svg>Reset</button>
+    </div>
+
+    <div class="right">
+      <button class="ctl-btn" type="button" data-open-tools aria-label="Open session tools">Tools</button>
+      <span class="sample-tag" data-session-status>Live engine</span>
+    </div>
+  </header>
+
+  <div class="connection-strip" id="session-notice" role="status" hidden></div>
+  <div class="bench-grid" id="bench-grid" data-mtab="monitor">
+    <!-- Left: vehicle signals as received by the protected ECU -->
+    <aside class="panel signals" aria-labelledby="sig-h">
+      <div class="panel-h"><h3 id="sig-h">Vehicle signals</h3></div>
+      <dl class="readouts" id="readouts">
+        <div class="readout" data-sig="speed" data-ids="512"><dt>Speed <span class="cid">0x200</span><span class="tgt">target</span></dt><dd><span class="v" data-v>0.0</span><span class="u">km/h</span></dd></div>
+        <div class="readout" data-sig="rpm" data-ids="512"><dt>Motor RPM <span class="cid">0x200</span><span class="tgt">target</span></dt><dd><span class="v" data-v>0</span><span class="u">rpm</span></dd></div>
+        <div class="readout" data-sig="brake" data-ids="288"><dt>Braking <span class="cid">0x120</span><span class="tgt">target</span></dt><dd><span class="v" data-v>0</span><span class="u">%</span></dd></div>
+        <div class="readout" data-sig="steer" data-ids="304"><dt>Steering <span class="cid">0x130</span><span class="tgt">target</span></dt><dd><span class="v" data-v>0.0</span><span class="u">deg</span></dd></div>
+        <div class="readout" data-sig="battery" data-ids="768"><dt>Battery <span class="cid">0x300</span><span class="tgt">target</span></dt><dd><span class="v" data-v>79.0</span><span class="u">%</span></dd></div>
+        <div class="readout" data-sig="motor"><dt>Motor enable <span class="cid">safety</span></dt><dd><span class="v drive" data-v>On</span><span class="u" data-motor-note>enabled</span></dd></div>
+      </dl>
+      <dl class="sim-clock"><dt>Sim time</dt><dd data-clock>00:00.000</dd><dt>Profile</dt><dd data-profile-out>Urban</dd><dt>Seed</dt><dd data-seed-out>42</dd></dl>
+      <p class="note">Values the protected ECU has received after the gateway — not what the generator sent. Body (0x400) and Infotainment (0x500) have no readout.</p>
+      <div class="workspace-tools">
+        <button class="btn btn-quiet" type="button" data-open-tools>Session tools &amp; validation</button>
+        <button class="btn btn-quiet" type="button" aria-pressed="false" data-motion-toggle><span>Reduce motion</span></button>
+        <a href="/how-it-works/">Lab guide ↗</a>
+        <p class="note" data-storage-note>Loading session…</p>
+      </div>
+    </aside>
+
+    <!-- Centre: the network stage -->
+    <section class="stage-area" aria-labelledby="stage-h">
+      <div class="stage-head">
+        <h3 id="stage-h" class="h3">Message journey</h3>
+        <ul class="legend" aria-label="Diagram legend">
+          <li><i class="sw base"></i>Baseline</li>
+          <li><i class="sw inj"></i>Injected</li>
+          <li><i class="sw fwd"></i>Forwarded</li>
+          <li><i class="sw blk"></i>Blocked</li>
+          <li><i class="sw drp"></i>Dropped</li>
+        </ul>
+        <div class="io-pair">
+          <div class="io io-input"><span class="label">Intensity · input</span><b data-io-int>None</b><span class="bars" data-level="0" data-io-bars aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></div>
+          <div class="io io-out"><span class="label">Gateway response · outcome</span><b data-io-sev>Observe</b><span class="sub" data-io-risk>threat 0/100</span></div>
+        </div>
+      </div>
+      <div class="bench-stage-slot"><div class="stage-box stage-slot" data-slot="workbench"></div></div>
+      <div class="callout-dock" id="callout-dock">
+        <section class="vehicle-live" aria-labelledby="vehicle-live-title">
+          <h3 id="vehicle-live-title" class="h3">Vehicle status</h3>
+          <p>Live readings at the protected ECU</p>
+          <div id="vehicle-live-values"></div>
+        </section>
+      </div>
+      <div class="stage-foot">
+        <p class="accounting mono" id="accounting" aria-live="off"></p>
+        <p class="sampling-note">Packets: a sampled set of real frames · motion slowed for legibility</p>
+      </div>
+      <p class="stage-caption" id="stage-caption" aria-live="polite"></p>
+    </section>
+
+    <!-- Bottom: four independent readouts, each driven only by its own component -->
+    <section class="rails" aria-labelledby="rails-h">
+      <div class="rails-h"><h3 id="rails-h" class="h3">Status · four independent readouts</h3><span class="sample-tag">Engine state · last 60 s sim time</span></div>
+      <div class="rail" data-rail="attack"><div class="rail-name"><b>Attack</b><span>input · generator</span></div><div class="rail-state"><span class="chip"></span><p class="rail-detail"></p></div><svg class="rail-track" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+      <div class="rail" data-rail="gateway"><div class="rail-name"><b>Gateway</b><span>STM32 · filtering</span></div><div class="rail-state"><span class="chip"></span><p class="rail-detail"></p></div><svg class="rail-track" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+      <div class="rail" data-rail="analyst"><div class="rail-name"><b>Analyst</b><label class="mini-switch"><input type="checkbox" role="switch" checked data-analyst><span class="track" aria-hidden="true"></span><span class="txt">Pi connected</span></label></div><div class="rail-state"><span class="chip"></span><p class="rail-detail"></p></div><svg class="rail-track" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+      <div class="rail" data-rail="safety"><div class="rail-name"><b>Safety</b><span>independent task</span></div><div class="rail-state"><span class="chip"></span><p class="rail-detail"></p><button class="btn btn-quiet btn-sm" type="button" data-recover hidden disabled>Request recovery</button></div><svg class="rail-track" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+      <details class="pi-explainer">
+        <summary>What does the Raspberry Pi do?</summary>
+        <p>The simulated Pi watches copies of inspected payloads, with a modeled 40 ms delay. It compares signal values with a statistical baseline learned from a separate clean trace.</p>
+        <p>Three consecutive abnormal observations for one CAN ID trigger a 500 ms hold, renewed if anomalies continue. The STM32 gateway enforces that hold on subsequent frames; the Pi is not in the forwarding path.</p>
+        <p>Gateway rules still work when the Pi is disconnected. A flood can be blocked for its rate while its payloads look normal to the Pi. Vehicle shutdown is a separate safety decision, not an automatic consequence of a Pi alert.</p>
+      </details>
+    </section>
+
+    <!-- Right: attack configuration + evidence -->
+    <aside class="panel side" aria-label="Attack and evidence">
+      <div class="tabs" role="tablist" aria-label="Side panel">
+        <button class="tab" role="tab" id="tab-attack" aria-controls="tp-attack" aria-selected="true" type="button">Attack</button>
+        <button class="tab" role="tab" id="tab-evidence" aria-controls="tp-evidence" aria-selected="false" type="button" tabindex="-1">Evidence <span class="count" data-ev-count>0</span></button>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="tp-attack" aria-labelledby="tab-attack">
+        <div class="attack-active" data-active-box hidden>
+          <div class="panel-h"><span class="ref-style-2 label">Attack active · input</span><span class="ref-style-3 mono" data-remaining></span></div>
+          <p class="ref-style-4" data-active-summary></p>
+          <p class="active-effect" data-active-effect></p>
+          <div class="progress" aria-hidden="true"><i data-progress></i></div>
+          <button class="ref-style-5 btn btn-quiet" type="button" data-stop>Stop all attacks</button>
+        </div>
+
+        <form id="attack-form">
+          <fieldset>
+            <legend><span class="h3">1 · Attack family</span><span class="sample-tag">Six families</span></legend>
+            <div class="families" id="families"></div>
+          </fieldset>
+          <fieldset>
+            <legend><span class="h3">2 · Target &amp; duration</span></legend>
+            <div class="row2">
+              <label class="fld"><span class="label">Target signal</span>
+                <select class="field-sel" name="target">
+                  <option value="288">0x120 · Brake</option><option value="304">0x130 · Steering</option><option value="512">0x200 · Powertrain</option>
+                  <option value="768">0x300 · Battery</option><option value="1024">0x400 · Body</option><option value="1280">0x500 · Infotainment</option>
+                </select></label>
+              <label class="fld"><span class="label">Duration</span>
+                <select class="field-sel" name="duration"><option value="3000">3 s</option><option value="5000" selected>5 s</option><option value="10000">10 s</option><option value="30000">30 s</option><option value="60000">60 s</option></select></label>
+            </div>
+            <p class="target-note" data-target-note></p>
+          </fieldset>
+          <fieldset>
+            <legend><span class="h3" id="lvl-h">3 · Intensity</span><span class="label">Input setting</span></legend>
+            <div class="levels" role="radiogroup" aria-labelledby="lvl-h" id="levels"></div>
+            <p class="intensity-preview" id="intensity-preview" aria-live="polite"></p>
+          </fieldset>
+          <div class="attack-cta" id="attack-cta">
+            <p class="summary-line" id="summary-line"></p>
+            <div data-cta-idle><button class="ref-style-5 btn btn-primary" type="button" data-inject>Inject attack…</button></div>
+            <div class="confirm" data-cta-confirm hidden>
+              <p id="confirm-text"></p>
+              <div class="btns"><button class="btn btn-quiet" type="button" data-cancel>Cancel</button><button class="btn btn-primary" type="button" data-confirm>Confirm injection</button></div>
+            </div>
+            <p class="attack-hint" data-attack-hint></p>
+          </div>
+        </form>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="tp-evidence" aria-labelledby="tab-evidence" hidden>
+        <div class="ref-style-6 panel-h"><span class="label">Gateway ledger · since reset</span><span class="sample-tag" data-ledger-time>sim 00:00.0</span></div>
+        <div class="ledger" id="ledger" role="group" aria-label="Filter frames by gateway outcome">
+          <button type="button" data-oc="received" title="Every frame offered to CAN A. Shows all outcomes."><span class="o-name"><svg aria-hidden="true"><use href="#i-receive"/></svg>Received</span><span class="o-n" data-n="received">0</span><span class="o-sub">offered to CAN A</span></button>
+          <button class="ref-style-7" type="button" aria-pressed="true" data-oc="FORWARD"><span class="o-name"><svg aria-hidden="true"><use href="#i-forward"/></svg>Forwarded</span><span class="o-n" data-n="forwarded">0</span><span class="o-sub">delivered to ECU</span></button>
+          <button class="ref-style-8" type="button" aria-pressed="true" data-oc="BLOCK"><span class="o-name"><svg aria-hidden="true"><use href="#i-block"/></svg>Blocked</span><span class="o-n" data-n="blocked">0</span><span class="o-sub">by a gateway rule</span></button>
+          <button type="button" aria-pressed="true" data-oc="DROP"><span class="o-name"><svg aria-hidden="true"><use href="#i-drop"/></svg>Dropped</span><span class="o-n" data-n="dropped">0</span><span class="o-sub">queue full</span></button>
+        </div>
+        <div class="split" aria-hidden="true" id="split"><i class="f"></i><i class="b"></i><i class="d"></i><i class="q"></i></div>
+        <p class="split-note" data-split-note>Every frame is offered to CAN A first. Each then ends as forwarded, blocked or dropped; the rest are still in a queue.</p>
+
+        <details class="why" open>
+          <summary><span class="h3">Why frames did not reach the ECU</span><span class="label">since reset</span></summary>
+          <ul class="why-list" id="why-list"></ul>
+        </details>
+
+        <div class="ev-head"><span class="h3">Recent frames</span><span class="label" data-ev-window>150 newest + 60 not forwarded</span></div>
+        <button class="ev-new" type="button" data-ev-new hidden></button>
+        <div class="ev-list" id="ev-list" role="list" aria-label="Frames recorded by the gateway, newest first"></div>
+
+        <details class="validation">
+          <summary><span class="h3">Live accounting check</span><span class="label" data-acc-state>—</span></summary>
+          <ul id="validation"></ul>
+        </details>
+      </div>
+    </aside>
+
+    <!-- Mobile-only: simulation settings tab receives the moved controls -->
+    <section class="m-sim" id="m-sim" aria-label="Simulation settings">
+      <h3 class="h3">Simulation</h3>
+      <div id="m-sim-slot"></div>
+    </section>
+  </div>
+
+  <nav class="workspace-dock" aria-label="Simulator panels">
+    <button type="button" data-panel="attack"><svg aria-hidden="true"><use href="#i-attack"/></svg>Attack</button>
+    <button type="button" data-panel="evidence"><svg aria-hidden="true"><use href="#i-evidence"/></svg>Evidence</button>
+    <button type="button" data-panel="signals"><svg aria-hidden="true"><use href="#i-monitor"/></svg>Vehicle</button>
+    <button type="button" data-panel="status"><svg aria-hidden="true"><use href="#i-eye"/></svg>Status</button>
+    <button type="button" data-panel="sim"><svg aria-hidden="true"><use href="#i-sim"/></svg>Settings</button>
+  </nav>
+  <nav class="tabbar" aria-label="Workbench sections" role="tablist">
+    <button type="button" role="tab" aria-selected="true" data-mtab="monitor"><svg aria-hidden="true"><use href="#i-monitor"/></svg>Monitor</button>
+    <button type="button" role="tab" aria-selected="false" data-mtab="attack"><svg aria-hidden="true"><use href="#i-attack"/></svg>Attack<span class="dot" data-attack-dot hidden></span></button>
+    <button type="button" role="tab" aria-selected="false" data-mtab="evidence"><svg aria-hidden="true"><use href="#i-evidence"/></svg>Evidence</button>
+    <button type="button" role="tab" aria-selected="false" data-mtab="sim"><svg aria-hidden="true"><use href="#i-sim"/></svg>Sim</button>
+  </nav>
+</section>
+</main>
+<dialog id="workspace-panel" aria-labelledby="workspace-panel-title">
+  <div class="drawer-heading"><h2 id="workspace-panel-title">Simulator</h2><button type="button" class="ctl-btn" data-close-panel aria-label="Close panel">Close ×</button></div>
+  <div id="workspace-panel-body"></div>
+  <div class="drawer-footer"><button type="button" class="btn btn-primary" data-show-journey>View message journey →</button></div>
+</dialog>
+<dialog id="session-tools" aria-labelledby="tools-title">
+  <div class="tools-heading"><h2 id="tools-title">Session tools</h2><button class="ctl-btn" type="button" data-close-tools aria-label="Close session tools">Close ×</button></div>
+  <p class="note">Import, export and validate using the same Sentinel model.</p>
+  <section><h3>Export evidence</h3><p class="note">Counters cover the whole session; frames and events are bounded recent windows.</p><div class="tool-actions"><button class="btn btn-quiet" type="button" data-export="json">Download JSON</button><button class="btn btn-quiet" type="button" data-export="csv">Download CSV</button></div></section>
+  <section><h3>Import CAN trace</h3><p class="note">Replaces this session with a completed replay. Export first to keep your current evidence. Maximum 2 MB; CSV or candump.</p><label class="fld">Trace file<input type="file" id="trace-file" accept=".csv,.log,.txt"></label><button class="btn btn-quiet" type="button" data-import>Import selected trace</button></section>
+  <section><h3>Validation</h3><p class="note">Run the existing 12 synthetic acceptance cases in isolation. Your current experiment is preserved.</p><button class="btn btn-primary" type="button" data-validate>Run 12-case validation</button><div id="validation-results"></div></section>
+  <p id="tools-message" role="status" aria-live="polite"></p>
+  <nav class="tool-actions" aria-label="Documentation"><a href="/attack-scenarios/">Attack reference</a><a href="/validation/">Validation method</a><a href="/laboratory/" target="_blank" rel="noopener">Classic laboratory ↗</a></nav>
+  <p class="note">The classic laboratory opens separately. Browser sessions in different tabs are independent.</p>
+</dialog>
+<noscript><p class="no-script">JavaScript is required for the interactive simulator. Read the <a href="/how-it-works/">architecture guide</a> or <a href="/attack-scenarios/">attack reference</a>.</p></noscript>
+
+<script src="/design/sentinel.js" type="module"></script>
+</body>
+</html>

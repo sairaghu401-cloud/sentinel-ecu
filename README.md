@@ -4,11 +4,19 @@
 
 A complete local software laboratory for the Sentinel ECU capstone: a two-segment CAN security gateway, an independent learned anomaly detector, a separate safety task, controlled attacks, and a live evidence dashboard. No hardware or online service is required.
 
-The hosted browser edition works without installing anything or keeping a server running. Each tab has an independent simulation. Imported traces stay on your device; export your results before reloading or closing. Cloudflare automatically deploys changes pushed to `main`.
+The hosted browser edition works without installing anything or keeping a server running. Each tab has an independent simulation. Imported traces stay on your device; export your results before reloading or closing. The repository contains a CI/CD workflow that promotes tested commits to `production`. Cloudflare must be configured to deploy that branch; local checks do not establish that the live site is up to date.
 
 ## Start
 
+The approved Signal Resolve introduction is at `/`, and the interactive workbench is at `/simulator/`. The architecture walkthrough runs an isolated model preview. The introduction loads without starting a simulation. The classic laboratory remains at `/laboratory/`; legacy traffic/validation/guide bookmarks route there.
+
 Install **Node.js 22 or newer**, then double-click **Start Sentinel.cmd** on Windows. Open **http://127.0.0.1:8787** after the ready message appears. Keep the terminal open while using the laboratory. Press Ctrl+C to save the session and stop.
+
+### Presentation and public pages
+
+`npm run build` prepares the browser edition, generates model-aligned explanation pages, and preserves the simulator at `/simulator/`. `npm run preview` opens a local preview server at **http://127.0.0.1:8788**. Public pages cover `/how-it-works/`, `/attack-scenarios/` and `/validation/`, with canonical metadata, a sitemap and a locally rendered social image.
+
+The presentation uses locally bundled Archivo and IBM Plex Mono fonts, SVG, a dithered canvas vehicle and native browser animation. It introduces no production dependency or external requests. See [the approved R2 contract](docs/SIGNAL-RESOLVE-CONTRACT.md). `npm run test:browser` covers the classic laboratory and the approved presentation, including desktop/mobile, reduced motion, real packet journeys, imports/exports, safety recovery and validation. Browser evidence is written under `artifacts/browser/`.
 
 From any terminal in this folder:
 
@@ -16,17 +24,18 @@ From any terminal in this folder:
 npm start
 ```
 
-There are no packages to install. The application uses Node's standard library and native browser APIs. Tabler CSS, the Amber Minimal theme and Barlow fonts are included locally; no runtime CDN, analytics, font service, API key or hardware driver is needed. The server binds to your computer's loopback address. If port 8787 is occupied, set the `PORT` environment variable before starting. Design sources and licenses are documented in [docs/DESIGN.md](docs/DESIGN.md).
+There are no packages to install. The application uses Node's standard library and native browser APIs. Archivo and IBM Plex Mono are included locally for Signal Resolve; the classic laboratory retains Tabler, Amber Minimal and Barlow. No runtime CDN, analytics, font service, API key or hardware driver is needed. The server binds to your computer's loopback address. If port 8787 is occupied, set the `PORT` environment variable before starting. Design sources and licenses are documented in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## A five minute demonstration
 
-1. Open **Overview**, keep the Urban profile and seed 42, and run the simulation. The vehicle schematic shows protected signal values. Expand **Network architecture** to follow CAN A through the gateway to CAN B and the receiving ECU.
-2. Observe normal forwarding, rule checks, the traffic plot, and the live vehicle values. Pause and step forward to inspect individual frames.
-3. Select a vehicle signal on the schematic (or use the attack target selector), then inject **Payload manipulation** or **Flooding** against a critical signal. Observe blocked frames and their explanations. The accumulated evidence raises the response level. A separate safety task acknowledges a degradation request.
-4. Disconnect the analyst using the Pi control. Repeat a rule-detectable attack: the gateway still filters traffic and healthy traffic continues to flow.
-5. Clear attacks, run through the quiet interval, and request recovery when eligible. The safety state does not silently clear itself.
-6. Open **Traffic inspector** to filter and inspect decisions. Export the session as JSON for full provenance or CSV for the retained frame window.
-7. Open **Validation** and run the repeatable suite. Compare the gateway against an ID-whitelist baseline on the same labelled synthetic frames.
+1. Select **Open simulator**, keep Urban and seed 42, then press **Run**. The message journey shows frames offered to CAN A, filtered at the gateway, and delivered on CAN B.
+2. Choose **ECU spoofing**, **0x130 Steering**, and **Low**. Inject and confirm. Normal frames continue while rejected frames stop at the gateway; safety need not degrade.
+3. Open **Evidence**. Select a blocked frame to pin its recorded path, exact rule reason and downstream result. Select a forwarded frame to see delivery to the ECU. Selection does not pause the model.
+4. Try **CAN flooding / Maximum** to distinguish queue drops from rule blocks. Counter accounting includes queued traffic.
+5. For a safety experiment, use **Payload manipulation / 0x120 Brake / Maximum**. The model alone determines whether evidence triggers degradation. Stop attacks, continue through the quiet interval, and explicitly request recovery when eligible.
+6. Use the Pi switch to disconnect the analyst; gateway rules remain active.
+7. Open **Tools** for JSON/CSV export, CSV/candump import and the isolated 12-case validation suite. Import replaces the current run with a completed replay; export evidence first. Reset starts a new synthetic session.
+8. On phones, use **Monitor**, **Attack**, **Evidence**, and **Sim** along the bottom. Reduced motion retains static paths, verdicts and receipt labels.
 
 Use Reset to start a new session with a chosen seed/profile. Pausing freezes simulated time. Speed changes simulation progress per timer callback; operating-system scheduling can make the observed wall-clock rate differ.
 
@@ -50,7 +59,7 @@ npm run validate
 npm run check
 ```
 
-The validation command writes an experiment report under `artifacts/`. It exits unsuccessfully if a required experiment check fails. Tests cover detector behavior, reproducibility, parsing, safety recovery, API boundaries, streaming, import/export, and session storage. CI runs the tests and synthetic validation on Windows and Linux using Node 22 and 24.
+The validation command writes an experiment report under `artifacts/`. It exits unsuccessfully if a required experiment check fails. Tests cover detector behavior, reproducibility, parsing, safety recovery, API boundaries, streaming, import/export, and session storage. CI runs the tests and synthetic validation on Windows and Linux using Node 22 and 24, and runs the browser checks (`npm run test:browser`) in Chromium.
 
 ## Import traces
 
@@ -101,5 +110,7 @@ The completed checks, observed limitations, and next research increment are reco
 The supplied project PDF and Claude context were used as design references. The current request supersedes their hardware-dependent demonstration: every hardware role is represented by a software component, and no hardware result is claimed.
 ## Browser deployment
 
-Build an independently usable public site with `npm run build`. Cloudflare Pages serves `dist/`; each visitor runs the actual simulator in an isolated browser worker. Traces stay in the browser, and exports retain model evidence. Reloading starts a new session. See [deployment instructions](docs/DEPLOYMENT.md).
+Build an independently usable public site with `npm run build`. Cloudflare Pages serves `dist/`; each visitor runs the actual simulator in an isolated browser worker. Traces stay in the browser, and exports retain model evidence. Reloading starts a new session.
+
+Deployment is gated by CI. Cloudflare Pages publishes the `production` branch, not `main`. When a commit on `main` passes the simulation and browser jobs, the workflow pushes that exact commit to `production`. It then waits until the live site reports that commit in `/_release.json` and checks the public assets. Do not push to `production` by hand. See [deployment instructions](docs/DEPLOYMENT.md).
 
