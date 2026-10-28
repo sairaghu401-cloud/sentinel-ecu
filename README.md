@@ -4,7 +4,7 @@
 
 A complete local software laboratory for the Sentinel ECU capstone: a two-segment CAN security gateway, an independent learned anomaly detector, a separate safety task, controlled attacks, and a live evidence dashboard. No hardware or online service is required.
 
-The hosted browser edition works without installing anything or keeping a server running. Each tab has an independent simulation. Imported traces stay on your device; export your results before reloading or closing. The repository contains a CI/CD workflow that promotes tested commits to `production`. Cloudflare must be configured to deploy that branch; local checks do not establish that the live site is up to date.
+The hosted browser edition works without installing anything or keeping a server running. Each tab has an independent simulation. Imported traces stay on your device; export your results before reloading or closing. Cloudflare Pages automatically deploys `main`. GitHub Actions runs the simulation and browser checks, then verifies that the live assets match that exact commit. Cloudflare deployment runs independently of CI; CI verifies the release rather than blocking it.
 
 ## Start
 
@@ -112,5 +112,5 @@ The supplied project PDF and Claude context were used as design references. The 
 
 Build an independently usable public site with `npm run build`. Cloudflare Pages serves `dist/`; each visitor runs the actual simulator in an isolated browser worker. Traces stay in the browser, and exports retain model evidence. Reloading starts a new session.
 
-Deployment is gated by CI. Cloudflare Pages publishes the `production` branch, not `main`. When a commit on `main` passes the simulation and browser jobs, the workflow pushes that exact commit to `production`. It then waits until the live site reports that commit in `/_release.json` and checks the public assets. Do not push to `production` by hand. See [deployment instructions](docs/DEPLOYMENT.md).
+Cloudflare Pages automatically publishes `main`. After the simulation and browser jobs pass, GitHub Actions waits until the live site reports that commit in `/_release.json` and checks the public assets. This is deployment verification, not a pre-deployment gate: Cloudflare can publish while CI is still running. Use a tested pull request before merging changes to `main`. See [deployment instructions](docs/DEPLOYMENT.md).
 
